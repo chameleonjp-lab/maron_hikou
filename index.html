@@ -956,6 +956,59 @@
 
     const MAX_LEVEL = 12;
 
+    // --- ゲームコア調整値 (Phase 2, §14〜§16) ---
+
+    // プレイヤー追従・移動
+    const PLAYER_FOLLOW_OFFSET = 70;   // 機体は指の 70px(論理)上に追従
+    const PLAYER_LERP          = 0.35; // 補間係数(ヌルっと追従)
+    const PLAYER_CLAMP = { minX: 16, maxX: 384, minY: 40, marginBottom: 20 };
+
+    // 自動ショット
+    const SHOT_BASE_INTERVAL = 0.40;   // 基本発射間隔(秒)
+    const SHOT_FIRERATE_MUL  = 0.85;   // fireRateLevel 1段階ごとに間隔×0.85
+    const BULLET_SPEED        = 520;   // プレイヤー弾速 px/s
+    const BULLET_DAMAGE       = 1;     // プレイヤー弾ダメージ
+    const BULLET_SPREAD       = 18;    // 弾の横展開間隔 px
+    const BULLET_RADIUS       = 4;     // プレイヤー弾の当たり半径
+    const BULLET_PIERCE_MAX   = 2;     // 貫通時に貫ける敵数
+
+    // 敵弾
+    const ENEMY_BULLET_SPEED  = 170;   // 敵弾速 px/s
+    const ENEMY_BULLET_RADIUS = 5;     // 敵弾の当たり半径
+
+    // 同時表示上限の保険 (§35)
+    const MAX_ENEMY_BULLETS = 120;
+    const MAX_PLAYER_BULLETS = 60;
+    const MAX_EFFECTS        = 30;
+
+    // 背景の流れる雲(論理座標。下へループ)。y0 は初期位置。
+    const CLOUDS = [
+      { x: 80,  y0: 120, s: 26, speed: 14 },
+      { x: 300, y0: 380, s: 34, speed: 10 },
+      { x: 200, y0: 640, s: 22, speed: 18 }
+    ];
+
+    // 敵タイプ定義 (§16)。speed は [min,max] 範囲でランダム。
+    const ENEMY_TYPES = {
+      small: {
+        hp: 1,   speedRange: [90, 130], radius: 14, score: SCORE_TABLE.SMALL_ENEMY,
+        emoji: '🛩️', color: '#7CFC7C', fireInterval: 0, shots: 0
+      },
+      medium: {
+        hp: 4,   speedRange: [55, 75],  radius: 20, score: SCORE_TABLE.MEDIUM_ENEMY,
+        emoji: '✈️', color: '#FFD24A', fireInterval: 2.2, shots: 1
+      },
+      large: {
+        hp: 10,  speedRange: [35, 45],  radius: 28, score: SCORE_TABLE.LARGE_ENEMY,
+        emoji: '🛫', color: '#FF6A5A', fireInterval: 2.8, shots: 3
+      },
+      boss: {
+        hp: 1,   speedRange: [0, 0],    radius: 44, score: SCORE_TABLE.BOSS,
+        emoji: '🛸', color: '#C080FF', fireInterval: 0, shots: 0
+        // Phase 4 で HP・弾幕を設定
+      }
+    };
+
     // ===== [B] 画面遷移マネージャ =====
 
     const SCREENS = ['home', 'name', 'countdown', 'game', 'result'];
@@ -1004,10 +1057,63 @@
       e.preventDefault();
     }, { passive: false });
 
-    // --- ポインタイベント処理(Phase 2 で実装) ---
-    function onPointerDown(e) { /* [C] Phase 2 で実装 */ }
-    function onPointerMove(e) { /* [C] Phase 2 で実装 */ }
-    function onPointerUp(e)   { /* [C] Phase 2 で実装 */ }
+    // --- ポインタイベント処理(Phase 2) ---
+    // canvas 上の clientX/Y を論理座標へ変換する。
+    // canvas の表示幅 = CANVAS_LOGIC_WIDTH * canvasScale なので、
+    // 論理座標 = (client - rect.left) / canvasScale。
+    function pointerToLogic(e) {
+      const canvas = document.getElementById('game-canvas');
+      const rect = canvas.getBoundingClientRect();
+      const scale = canvasScale || (rect.width / CANVAS_LOGIC_WIDTH) || 1;
+      const lx = (e.clientX - rect.left) / scale;
+      const ly = (e.clientY - rect.top)  / scale;
+      return { lx, ly };
+    }
+
+    // 目標位置を設定(機体は指の PLAYER_FOLLOW_OFFSET 上)。クランプは update 時。
+    function setPlayerTargetFromPointer(e) {
+      const { lx, ly } = pointerToLogic(e);
+      player.targetX = lx;
+      player.targetY = ly - PLAYER_FOLLOW_OFFSET;
+    }
+
+    function onPointerDown(e) {
+      if (e.cancelable) e.preventDefault();
+      const canvas = document.getElementById('game-canvas');
+      // canvas 外へ指が出ても追従を切らさない
+      if (canvas.setPointerCapture && e.pointerId != null) {
+        try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+      }
+      player.pointerActive = true;
+      setPlayerTargetFromPointer(e);
+    }
+
+    function onPointerMove(e) {
+      if (!player.pointerActive) return; // pointerdown 中のみ追従
+      if (e.cancelable) e.preventDefault();
+      setPlayerTargetFromPointer(e);
+    }
+
+    function onPointerUp(e) {
+      // 最後の目標位置は保持したまま追従を停止
+      player.pointerActive = false;
+      const canvas = document.getElementById('game-canvas');
+      if (canvas.releasePointerCapture && e.pointerId != null) {
+        try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+      }
+    }
+
+    /**
+     * 機体を画面内にクランプする(x: 16〜384, y: 40〜LOGIC_H-20)。
+     * resizeCanvas() からも呼ばれるため、論理高さ変更時に取り残されない。
+     */
+    function clampPlayer() {
+      const maxY = (typeof LOGIC_H === 'number' ? LOGIC_H : 600) - PLAYER_CLAMP.marginBottom;
+      player.x = Math.max(PLAYER_CLAMP.minX, Math.min(PLAYER_CLAMP.maxX, player.x));
+      player.y = Math.max(PLAYER_CLAMP.minY, Math.min(maxY, player.y));
+      player.targetX = Math.max(PLAYER_CLAMP.minX, Math.min(PLAYER_CLAMP.maxX, player.targetX));
+      player.targetY = Math.max(PLAYER_CLAMP.minY, Math.min(maxY, player.targetY));
+    }
 
     // ===== [D] ゲームステート =====
 
@@ -1042,6 +1148,10 @@
     let player = {
       x: CANVAS_LOGIC_WIDTH / 2,
       y: 500,
+      targetX: CANVAS_LOGIC_WIDTH / 2, // 指の目標位置(追従先 x)
+      targetY: 500,                    // 指の目標位置(追従先 y、既に -70 補正済み)
+      pointerActive: false,            // pointerdown 中か
+      fireTimer: 0,                    // 次弾までの残り時間(秒)
       bulletCount:   PLAYER_INIT.bulletCount,
       fireRateLevel: PLAYER_INIT.fireRateLevel,
       piercing:      PLAYER_INIT.piercing,
@@ -1050,11 +1160,18 @@
       invincibleUntil: 0
     };
 
+    // ゲーム内経過時間(秒)。無敵時間などの基準。startGame でリセット。
+    let gameTime = 0;
+
     // ゲームオブジェクト配列 (Phase 2 で実装)
     let enemies      = [];
     let bullets      = [];
     let enemyBullets = [];
     let loots        = [];
+    let effects      = [];   // 爆発などの一時演出 (Phase 2)
+
+    // テスト用スポーンのタイマー類(Phase 4 のウェーブ制で置換)
+    let _spawnTimers = { small: 0, medium: 0, large: 0 };
 
     /**
      * ゲームステートをリセットして新しいプレイを開始する準備
@@ -1084,9 +1201,14 @@
         playId: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
         scoreSent: false
       };
+      const startY = (typeof LOGIC_H === 'number' ? LOGIC_H : 600) - 120;
       player = {
         x: CANVAS_LOGIC_WIDTH / 2,
-        y: 500,
+        y: startY,
+        targetX: CANVAS_LOGIC_WIDTH / 2,
+        targetY: startY,
+        pointerActive: false,
+        fireTimer: 0,
         bulletCount:   PLAYER_INIT.bulletCount,
         fireRateLevel: PLAYER_INIT.fireRateLevel,
         piercing:      PLAYER_INIT.piercing,
@@ -1098,12 +1220,20 @@
       bullets      = [];
       enemyBullets = [];
       loots        = [];
+      effects      = [];
+      gameTime     = 0;
+      // HUD キャッシュをリセット(値が変わった時だけ DOM 更新するため)
+      _hudCache = {};
+      // テスト用スポーンのタイマー類もリセット(Phase 4 で置換)
+      _spawnTimers = { small: 0, medium: 0, large: 0 };
     }
 
     // ===== [E] ゲームループ(requestAnimationFrame) =====
 
     let animFrameId = null;
     let lastTimestamp = 0;
+    // HUD の前回値キャッシュ(値が変わった時だけ DOM 更新するため)
+    let _hudCache = {};
 
     /**
      * ゲームループ開始
@@ -1112,30 +1242,597 @@
     function startGame() {
       lastTimestamp = 0;
       if (animFrameId) cancelAnimationFrame(animFrameId);
+      // テスト用ウェーブ開始(Phase 4 で本実装に置換)
+      startWave(gameState.wave);
       animFrameId = requestAnimationFrame(gameLoop);
     }
 
     /**
-     * ゲームループ本体 (Phase 2 で実装)
+     * ゲームループ本体: update(delta) → checkCollisions() → draw()
      */
     function gameLoop(timestamp) {
       if (!document.getElementById('screen-game').classList.contains('active')) return;
       const delta = lastTimestamp === 0 ? 0 : Math.min((timestamp - lastTimestamp) / 1000, 0.05);
       lastTimestamp = timestamp;
 
-      // [E] Phase 2: update(delta), checkCollisions(), draw()
+      // リタイア確認モーダル表示中はゲームを一時停止(描画のみ継続)
+      const retirePaused = document.getElementById('retire-modal').classList.contains('open');
+      if (delta > 0 && !retirePaused) {
+        update(delta);
+        checkCollisions();
+      }
+      draw();
       updateHUD();
 
       animFrameId = requestAnimationFrame(gameLoop);
     }
 
+    // ----- 数値ユーティリティ -----
+    function rand(min, max) { return min + Math.random() * (max - min); }
+    function dist2(ax, ay, bx, by) { const dx = ax - bx, dy = ay - by; return dx * dx + dy * dy; }
+
     /**
-     * HUD を gameState の値で更新
+     * 更新フェーズ: 時間・プレイヤー・弾・敵・敵弾・エフェクトを delta 秒進める
+     * @param {number} delta 経過秒
+     */
+    function update(delta) {
+      gameTime += delta;
+
+      updatePlayer(delta);
+      updateBullets(delta);
+      updateEnemies(delta);
+      updateEnemyBullets(delta);
+      updateEffects(delta);
+      updateLoots(delta);
+
+      // テスト用スポーン(Phase 4 のウェーブ制で置換)
+      updateTestSpawns(delta);
+
+      cullObjects();
+    }
+
+    /**
+     * プレイヤー: 目標位置へ補間追従し、自動ショットを撃つ
+     */
+    function updatePlayer(delta) {
+      // pointerdown 中のみ目標を追う。離した後は最後の目標位置を保持。
+      // どちらでも目標へ向けて lerp する(ヌルっと追従)。
+      player.x += (player.targetX - player.x) * PLAYER_LERP;
+      player.y += (player.targetY - player.y) * PLAYER_LERP;
+      clampPlayer();
+
+      // 自動ショット
+      player.fireTimer -= delta;
+      if (player.fireTimer <= 0) {
+        firePlayerBullets();
+        const interval = SHOT_BASE_INTERVAL * Math.pow(SHOT_FIRERATE_MUL, player.fireRateLevel);
+        // 1フレームで複数発撃たないよう、間隔を加算ではなく再設定
+        player.fireTimer += interval;
+        if (player.fireTimer <= 0) player.fireTimer = interval;
+      }
+    }
+
+    /**
+     * 自動ショット発射。bulletCount を横に等間隔(中心対称)で展開。
+     * わずかに外側の弾へ外向き角度を付ける。貫通中は pierceLeft を持たせる。
+     */
+    function firePlayerBullets() {
+      const n = player.bulletCount;
+      // 中心対称に並べるためのオフセット列 (例 n=1 → [0], n=2 → [-0.5,0.5], n=3 → [-1,0,1])
+      const startOffset = -(n - 1) / 2;
+      for (let i = 0; i < n; i++) {
+        const slot = startOffset + i;
+        const px = player.x + slot * BULLET_SPREAD;
+        // 外側の弾はわずかに外向き(中心は直進)
+        const angleDeg = slot * 4; // ±4°/段。直進寄りで素直に当たる。
+        const rad = angleDeg * Math.PI / 180;
+        bullets.push({
+          x: px,
+          y: player.y - 18,
+          vx: Math.sin(rad) * BULLET_SPEED,
+          vy: -Math.cos(rad) * BULLET_SPEED,
+          r: BULLET_RADIUS,
+          dmg: BULLET_DAMAGE,
+          // pierceLeft = 最初のヒット後に貫ける「追加」の敵数。
+          // 貫通弾は計 BULLET_PIERCE_MAX 体まで当たる(=追加 MAX-1 体)。非貫通は 0。
+          pierceLeft: player.piercing ? (BULLET_PIERCE_MAX - 1) : 0,
+          // 貫通弾が通過中の同一敵へ毎フレーム多段ヒットしないよう、命中済み敵を記録
+          hitEnemies: null
+        });
+      }
+      // 上限保険: 古いものから捨てる
+      if (bullets.length > MAX_PLAYER_BULLETS) {
+        bullets.splice(0, bullets.length - MAX_PLAYER_BULLETS);
+      }
+    }
+
+    function updateBullets(delta) {
+      for (let i = 0; i < bullets.length; i++) {
+        const b = bullets[i];
+        b.x += b.vx * delta;
+        b.y += b.vy * delta;
+      }
+    }
+
+    /**
+     * 敵を生成して enemies に追加する。
+     * @param {'small'|'medium'|'large'|'boss'} type
+     * @param {number} x 出現 x(論理)
+     * @param {'straight'|'sway'|'zigzag'} pattern 移動パターン
+     */
+    function spawnEnemy(type, x, pattern) {
+      const def = ENEMY_TYPES[type];
+      if (!def) return;
+      const speed = rand(def.speedRange[0], def.speedRange[1]);
+      enemies.push({
+        type: type,
+        x: x,
+        y: -40,
+        baseX: x,                       // sway の中心 x
+        r: def.radius,
+        hp: def.hp,
+        maxHp: def.hp,
+        speed: speed,
+        score: def.score,
+        emoji: def.emoji,
+        color: def.color,
+        pattern: pattern || 'straight',
+        swayT: Math.random() * Math.PI * 2, // sway 位相をばらす
+        zigDir: Math.random() < 0.5 ? -1 : 1,
+        zigTimer: 0,
+        fireInterval: def.fireInterval,
+        shots: def.shots,
+        // 最初の発砲まで少し猶予(出現直後に撃たない)
+        fireTimer: def.fireInterval > 0 ? rand(def.fireInterval * 0.5, def.fireInterval) : 0,
+        age: 0
+      });
+    }
+
+    function updateEnemies(delta) {
+      for (let i = 0; i < enemies.length; i++) {
+        const e = enemies[i];
+        e.age += delta;
+        // 下方向へ前進
+        e.y += e.speed * delta;
+
+        // 横移動パターン
+        if (e.pattern === 'sway') {
+          // 振幅60, 周期2.5s の正弦波
+          e.swayT += delta * (Math.PI * 2 / 2.5);
+          e.x = e.baseX + Math.sin(e.swayT) * 60;
+        } else if (e.pattern === 'zigzag') {
+          e.zigTimer += delta;
+          if (e.zigTimer >= 1.2) { e.zigTimer = 0; e.zigDir *= -1; }
+          e.x += e.zigDir * 70 * delta;
+        }
+        // 横は画面内に軽くクランプ(完全には外へ出さない)
+        if (e.x < e.r) e.x = e.r;
+        if (e.x > CANVAS_LOGIC_WIDTH - e.r) e.x = CANVAS_LOGIC_WIDTH - e.r;
+
+        // 敵弾発射
+        if (e.fireInterval > 0 && e.shots > 0) {
+          e.fireTimer -= delta;
+          if (e.fireTimer <= 0) {
+            fireEnemyBullets(e);
+            e.fireTimer += e.fireInterval;
+            if (e.fireTimer <= 0) e.fireTimer = e.fireInterval;
+          }
+        }
+      }
+    }
+
+    /**
+     * 敵弾を発射する。shots に応じて単発/3-way。aimed 指定でプレイヤー狙い撃ち。
+     * @param {object} e 敵
+     */
+    function fireEnemyBullets(e) {
+      const sx = e.x, sy = e.y + e.r * 0.5;
+      // 基準角(下方向 = +90°)。aimed ならプレイヤー方向。
+      let baseAngle = Math.PI / 2; // 下向き
+      if (e.aimed) {
+        baseAngle = Math.atan2(player.y - sy, player.x - sx);
+      }
+      const spread = 25 * Math.PI / 180; // ±25°
+      let angles;
+      if (e.shots >= 3) {
+        angles = [baseAngle - spread, baseAngle, baseAngle + spread];
+      } else {
+        angles = [baseAngle];
+      }
+      for (const a of angles) {
+        enemyBullets.push({
+          x: sx,
+          y: sy,
+          vx: Math.cos(a) * ENEMY_BULLET_SPEED,
+          vy: Math.sin(a) * ENEMY_BULLET_SPEED,
+          r: ENEMY_BULLET_RADIUS
+        });
+      }
+      if (enemyBullets.length > MAX_ENEMY_BULLETS) {
+        enemyBullets.splice(0, enemyBullets.length - MAX_ENEMY_BULLETS);
+      }
+    }
+
+    function updateEnemyBullets(delta) {
+      for (let i = 0; i < enemyBullets.length; i++) {
+        const b = enemyBullets[i];
+        b.x += b.vx * delta;
+        b.y += b.vy * delta;
+      }
+    }
+
+    function updateEffects(delta) {
+      for (let i = 0; i < effects.length; i++) {
+        effects[i].t += delta;
+      }
+    }
+
+    /**
+     * 戦利品の落下更新。Phase 3 で本実装するが、配列に入っていれば最低限落として cull できるようにする。
+     */
+    function updateLoots(delta) {
+      for (let i = 0; i < loots.length; i++) {
+        const l = loots[i];
+        if (typeof l.vy === 'number') l.y += l.vy * delta;
+      }
+    }
+
+    /**
+     * 撃破時の爆発エフェクトを追加(0.3秒で拡大して消える)
+     */
+    function spawnExplosion(x, y, size) {
+      effects.push({ x: x, y: y, t: 0, dur: 0.3, size: size || 24, kind: 'boom' });
+      if (effects.length > MAX_EFFECTS) {
+        effects.splice(0, effects.length - MAX_EFFECTS);
+      }
+    }
+
+    /**
+     * 画面外・撃破済み・命中済みオブジェクトを配列から削除(逆順 splice)。
+     */
+    function cullObjects() {
+      const topKill = -80;
+      const botKill = LOGIC_H + 60;
+      const leftKill = -80;
+      const rightKill = CANVAS_LOGIC_WIDTH + 80;
+
+      // プレイヤー弾: 命中済み(dead) or 画面外
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        if (b.dead || b.y < topKill || b.y > botKill || b.x < leftKill || b.x > rightKill) {
+          bullets.splice(i, 1);
+        }
+      }
+      // 敵弾: 画面外(下端通過含む)
+      for (let i = enemyBullets.length - 1; i >= 0; i--) {
+        const b = enemyBullets[i];
+        if (b.dead || b.y > botKill || b.y < topKill || b.x < leftKill || b.x > rightKill) {
+          enemyBullets.splice(i, 1);
+        }
+      }
+      // 敵: 撃破済み(dead) or 画面下端を通過(すり抜けペナルティなし)
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const e = enemies[i];
+        if (e.dead || e.y - e.r > botKill) {
+          enemies.splice(i, 1);
+        }
+      }
+      // エフェクト: 寿命切れ
+      for (let i = effects.length - 1; i >= 0; i--) {
+        if (effects[i].t >= effects[i].dur) effects.splice(i, 1);
+      }
+      // 戦利品: 画面外(Phase 3 で回収処理を追加)
+      for (let i = loots.length - 1; i >= 0; i--) {
+        const l = loots[i];
+        if (l.dead || l.y > botKill) loots.splice(i, 1);
+      }
+    }
+
+    /**
+     * テスト用スポーン(Phase 4 のウェーブ制がまだないため暫定)。
+     * 2秒ごとに small、8秒ごとに medium、20秒ごとに large を1体。x はランダム。
+     * TODO: Phase 4 でウェーブテーブルへ置換する。
+     */
+    function updateTestSpawns(delta) {
+      const patterns = ['straight', 'sway', 'zigzag'];
+      const randX = () => rand(40, CANVAS_LOGIC_WIDTH - 40);
+      const randPattern = () => patterns[Math.floor(Math.random() * patterns.length)];
+
+      _spawnTimers.small -= delta;
+      if (_spawnTimers.small <= 0) {
+        spawnEnemy('small', randX(), randPattern());
+        _spawnTimers.small += 2.0;
+      }
+      _spawnTimers.medium -= delta;
+      if (_spawnTimers.medium <= 0) {
+        spawnEnemy('medium', randX(), randPattern());
+        _spawnTimers.medium += 8.0;
+      }
+      _spawnTimers.large -= delta;
+      if (_spawnTimers.large <= 0) {
+        spawnEnemy('large', randX(), randPattern());
+        _spawnTimers.large += 20.0;
+      }
+    }
+
+    // ===== 衝突判定(すべて円判定。距離² で平方根回避) =====
+
+    /**
+     * 衝突判定フェーズ:
+     *  - プレイヤー弾 × 敵
+     *  - 敵弾 × プレイヤー
+     *  - 敵本体 × プレイヤー
+     */
+    function checkCollisions() {
+      // --- プレイヤー弾 × 敵 ---
+      for (let bi = 0; bi < bullets.length; bi++) {
+        const b = bullets[bi];
+        if (b.dead) continue;
+        for (let ei = 0; ei < enemies.length; ei++) {
+          const e = enemies[ei];
+          if (e.dead) continue;
+          // 貫通弾が通過中の同一敵に毎フレーム多段ヒットしない
+          if (b.hitEnemies && b.hitEnemies.indexOf(e) !== -1) continue;
+          const rr = b.r + e.r;
+          if (dist2(b.x, b.y, e.x, e.y) < rr * rr) {
+            // ヒット
+            e.hp -= b.dmg;
+            if (b.pierceLeft > 0) {
+              b.pierceLeft -= 1;          // 貫通: 敵を貫いて継続
+              (b.hitEnemies || (b.hitEnemies = [])).push(e);
+            } else {
+              b.dead = true;              // 非貫通: この弾は消滅
+            }
+            if (e.hp <= 0) {
+              killEnemy(e);
+            }
+            if (b.dead) break;            // この弾は終了、次の弾へ
+          }
+        }
+      }
+
+      // 無敵中はプレイヤー被弾判定をスキップ
+      const invincible = gameTime < player.invincibleUntil;
+
+      // --- 敵弾 × プレイヤー ---
+      if (!invincible) {
+        for (let i = 0; i < enemyBullets.length; i++) {
+          const b = enemyBullets[i];
+          if (b.dead) continue;
+          const rr = b.r + player.hitRadius;
+          if (dist2(b.x, b.y, player.x, player.y) < rr * rr) {
+            b.dead = true;
+            hitPlayer();
+            break; // 1フレームに1回だけ被弾(無敵が入るので以降は無効)
+          }
+        }
+      }
+
+      // --- 敵本体 × プレイヤー ---
+      if (gameTime >= player.invincibleUntil) {
+        for (let i = 0; i < enemies.length; i++) {
+          const e = enemies[i];
+          if (e.dead) continue;
+          const rr = e.r + player.hitRadius;
+          if (dist2(e.x, e.y, player.x, player.y) < rr * rr) {
+            hitPlayer();
+            break;
+          }
+        }
+      }
+    }
+
+    /**
+     * 敵を撃破する: スコア・撃破数加算、爆発、戦利品ドロップ(Phase 3)。
+     */
+    function killEnemy(e) {
+      if (e.dead) return;
+      e.dead = true;
+      gameState.kills++;
+      addScore(e.score);
+      spawnExplosion(e.x, e.y, e.r * 1.6);
+      // Phase 3: 戦利品ドロップ(敵種別ドロップ率は spawnLoot 側で実装)
+      spawnLoot(e.x, e.y, e.type);
+    }
+
+    /**
+     * プレイヤー被弾処理。シールド優先 → 耐久。被弾後 1.2 秒無敵。耐久0で終了。
+     */
+    function hitPlayer() {
+      // 無敵中は無効(二重呼び出しの保険)
+      if (gameTime < player.invincibleUntil) return;
+
+      if (gameState.shield > 0) {
+        gameState.shield -= 1;
+      } else {
+        gameState.hp -= 1;
+      }
+      player.invincibleUntil = gameTime + 1.2;
+      spawnExplosion(player.x, player.y, 30);
+
+      if (gameState.hp <= 0) {
+        gameState.hp = 0;
+        endGame(false);
+      }
+    }
+
+    // ===== 描画 [E] =====
+
+    /**
+     * 1フレーム描画。背景 → 戦利品 → 敵 → プレイヤー弾 → 敵弾 → プレイヤー → エフェクト。
+     */
+    function draw() {
+      const ctx = canvasCtx;
+      if (!ctx) return;
+
+      // 論理座標系でクリア(setTransform 済みなので 0,0〜CANVAS_LOGIC_WIDTH,LOGIC_H)
+      ctx.clearRect(0, 0, CANVAS_LOGIC_WIDTH, LOGIC_H);
+
+      drawBackground(ctx);
+      drawLoots(ctx);
+      drawEnemies(ctx);
+      drawPlayerBullets(ctx);
+      drawEnemyBullets(ctx);
+      drawPlayer(ctx);
+      drawEffects(ctx);
+    }
+
+    // 背景グラデーション(キャッシュ。リサイズで作り直す)
+    let _bgGrad = null;
+    let _bgGradH = -1;
+    function drawBackground(ctx) {
+      if (!_bgGrad || _bgGradH !== LOGIC_H) {
+        _bgGrad = ctx.createLinearGradient(0, 0, 0, LOGIC_H);
+        _bgGrad.addColorStop(0,   '#1a1040');
+        _bgGrad.addColorStop(0.45,'#3a2060');
+        _bgGrad.addColorStop(0.72,'#7a3a5a');
+        _bgGrad.addColorStop(0.9, '#c0603a');
+        _bgGrad.addColorStop(1,   '#e8854a');
+        _bgGradH = LOGIC_H;
+      }
+      ctx.fillStyle = _bgGrad;
+      ctx.fillRect(0, 0, CANVAS_LOGIC_WIDTH, LOGIC_H);
+
+      // ゆっくり下へ流れる雲(◯を3つ、ループ)。軽量に。
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,0.10)';
+      const cloudSpan = LOGIC_H + 120;
+      for (let i = 0; i < CLOUDS.length; i++) {
+        const c = CLOUDS[i];
+        // gameTime ベースで下へ流す
+        let cy = ((c.y0 + gameTime * c.speed) % cloudSpan);
+        if (cy < 0) cy += cloudSpan;
+        cy -= 60;
+        drawCloud(ctx, c.x, cy, c.s);
+      }
+      ctx.restore();
+    }
+
+    function drawCloud(ctx, x, y, s) {
+      ctx.beginPath();
+      ctx.arc(x,        y,        s,        0, Math.PI * 2);
+      ctx.arc(x + s,    y + s*0.2, s*0.8,   0, Math.PI * 2);
+      ctx.arc(x - s,    y + s*0.2, s*0.8,   0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawEnemies(ctx) {
+      for (let i = 0; i < enemies.length; i++) {
+        const e = enemies[i];
+        drawEmoji(ctx, e.emoji, e.x, e.y, e.r * 2);
+        // 体力バー(2以上の最大HPのみ、減っている時だけ)
+        if (e.maxHp > 1 && e.hp < e.maxHp) {
+          const w = e.r * 1.8;
+          const h = 3;
+          const bx = e.x - w / 2;
+          const by = e.y - e.r - 7;
+          ctx.fillStyle = 'rgba(0,0,0,0.5)';
+          ctx.fillRect(bx, by, w, h);
+          ctx.fillStyle = '#ff6a5a';
+          ctx.fillRect(bx, by, w * Math.max(0, e.hp / e.maxHp), h);
+        }
+      }
+    }
+
+    function drawPlayerBullets(ctx) {
+      ctx.fillStyle = '#ffe46a';
+      for (let i = 0; i < bullets.length; i++) {
+        const b = bullets[i];
+        // 小さな縦長の光
+        ctx.beginPath();
+        roundRectPath(ctx, b.x - b.r * 0.6, b.y - b.r * 1.6, b.r * 1.2, b.r * 3.2, b.r * 0.6);
+        ctx.fill();
+      }
+    }
+
+    function drawEnemyBullets(ctx) {
+      ctx.fillStyle = '#ff7a3a';
+      for (let i = 0; i < enemyBullets.length; i++) {
+        const b = enemyBullets[i];
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawLoots(ctx) {
+      // Phase 3 で本実装。配列にあれば絵文字で描く。
+      for (let i = 0; i < loots.length; i++) {
+        const l = loots[i];
+        drawEmoji(ctx, l.emoji || '🔧', l.x, l.y, (l.r ? l.r * 2 : 22));
+      }
+    }
+
+    function drawPlayer(ctx) {
+      // 被弾無敵中は点滅(約12Hz)
+      const invincible = gameTime < player.invincibleUntil;
+      if (invincible && Math.floor(gameTime * 12) % 2 === 0) return;
+      drawEmoji(ctx, '✈️', player.x, player.y, 34);
+    }
+
+    function drawEffects(ctx) {
+      for (let i = 0; i < effects.length; i++) {
+        const ef = effects[i];
+        const p = ef.t / ef.dur;          // 0→1
+        const r = ef.size * (0.4 + p * 0.9);
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, 1 - p);
+        ctx.strokeStyle = '#ffd070';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(ef.x, ef.y, r, 0, Math.PI * 2);
+        ctx.stroke();
+        // 中心に💥(序盤だけ)
+        if (p < 0.6) {
+          ctx.globalAlpha = Math.max(0, 1 - p * 1.6);
+          drawEmoji(ctx, '💥', ef.x, ef.y, ef.size * 1.2);
+        }
+        ctx.restore();
+      }
+    }
+
+    /**
+     * 絵文字を座標中心に描く
+     */
+    function drawEmoji(ctx, emoji, x, y, size) {
+      ctx.font = size + 'px -apple-system, "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(emoji, x, y);
+    }
+
+    /**
+     * 角丸矩形パス(プレイヤー弾用)
+     */
+    function roundRectPath(ctx, x, y, w, h, r) {
+      r = Math.min(r, w / 2, h / 2);
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y,     x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x,     y + h, r);
+      ctx.arcTo(x,     y + h, x,     y,     r);
+      ctx.arcTo(x,     y,     x + w, y,     r);
+      ctx.closePath();
+    }
+
+    /**
+     * HUD を gameState の値で更新。
+     * 毎フレーム呼ばれるため、値が変わった時だけ DOM を書き換える(性能優先)。
      */
     function updateHUD() {
-      document.getElementById('hud-wave').textContent  = 'W' + gameState.wave;
-      document.getElementById('hud-score').textContent = formatScore(gameState.score);
-      document.getElementById('hud-lv').textContent    = 'Lv.' + gameState.level;
+      const c = _hudCache;
+
+      if (c.wave !== gameState.wave) {
+        document.getElementById('hud-wave').textContent = 'W' + gameState.wave;
+        c.wave = gameState.wave;
+      }
+      if (c.score !== gameState.score) {
+        document.getElementById('hud-score').textContent = formatScore(gameState.score);
+        c.score = gameState.score;
+      }
+      if (c.level !== gameState.level) {
+        document.getElementById('hud-lv').textContent = 'Lv.' + gameState.level;
+        c.level = gameState.level;
+      }
 
       // 経験値バー(EXP_TABLE[i] = Lv.(i+1) 到達に必要な累積経験値)
       const expForNext = gameState.level < MAX_LEVEL ? EXP_TABLE[gameState.level] : 0;
@@ -1143,25 +1840,40 @@
       const range      = expForNext - expPrev;
       const pct        = (gameState.level >= MAX_LEVEL) ? 100
                        : range > 0 ? Math.min(100, Math.floor((gameState.exp - expPrev) / range * 100)) : 0;
-      document.getElementById('hud-expbar-fill').style.width = pct + '%';
+      if (c.expPct !== pct) {
+        document.getElementById('hud-expbar-fill').style.width = pct + '%';
+        c.expPct = pct;
+      }
 
       // 耐久
-      const hearts = '❤️'.repeat(Math.max(0, gameState.hp)) + '🖤'.repeat(Math.max(0, gameState.maxHp - gameState.hp));
-      document.getElementById('hud-hp').textContent = hearts;
+      if (c.hp !== gameState.hp || c.maxHp !== gameState.maxHp) {
+        const hearts = '❤️'.repeat(Math.max(0, gameState.hp)) + '🖤'.repeat(Math.max(0, gameState.maxHp - gameState.hp));
+        document.getElementById('hud-hp').textContent = hearts;
+        c.hp = gameState.hp;
+        c.maxHp = gameState.maxHp;
+      }
 
       // シールド
-      const shieldEl = document.getElementById('hud-shield');
-      shieldEl.textContent = gameState.shield > 0 ? '🛡️×' + gameState.shield : '';
+      if (c.shield !== gameState.shield) {
+        document.getElementById('hud-shield').textContent = gameState.shield > 0 ? '🛡️×' + gameState.shield : '';
+        c.shield = gameState.shield;
+      }
     }
 
     // ===== [F] ウェーブ・敵生成 =====
-    // (Phase 4 で実装。以下はプレースホルダ)
+    // (Phase 4 で本実装。Phase 2 はテスト用の仮スポーンのみ)
 
     /**
-     * 指定ウェーブを開始する (Phase 4 で実装)
+     * 指定ウェーブを開始する。
+     * TODO: Phase 4 — 30波テーブルに基づく敵編成・ボス出現へ置換する。
+     * Phase 2 ではテスト用スポーンのタイマーを初期化するだけ。
+     * 実際のスポーン(2秒ごと small / 8秒ごと medium / 20秒ごと large)は
+     * deltaTime ベースで updateTestSpawns() が行う(setInterval を使わない=タイマーリーク防止)。
      */
     function startWave(waveNo) {
-      // TODO: Phase 4
+      // TODO: Phase 4 でウェーブテーブル参照へ置換
+      // 最初の small は早めに出す。medium / large は最初の周期後に出す。
+      _spawnTimers = { small: 0.6, medium: 8.0, large: 20.0 };
     }
 
     /**
@@ -1382,8 +2094,17 @@
 
     // ===== Canvas リサイズ処理 =====
 
+    // 論理座標系の状態(Phase 2)
+    // 論理幅は CANVAS_LOGIC_WIDTH(=400)固定。scale = 表示幅/400。
+    // LOGIC_H = 表示高さ/scale(端末により可変)。
+    let canvasCtx   = null;   // 2D コンテキスト(キャッシュ)
+    let canvasDpr   = 1;      // devicePixelRatio
+    let canvasScale = 1;      // 表示幅 / CANVAS_LOGIC_WIDTH
+    let LOGIC_H     = 600;    // 論理高さ(可変)
+
     /**
-     * canvas のサイズをデバイスピクセル比と画面サイズに合わせて設定
+     * canvas のサイズをデバイスピクセル比と画面サイズに合わせて設定し、
+     * 論理座標系(幅 400 固定)のスケールを確定する。
      */
     function resizeCanvas() {
       const gameEl   = document.getElementById('screen-game');
@@ -1396,7 +2117,7 @@
       const dpr        = window.devicePixelRatio || 1;
       const wrapW      = Math.min(window.innerWidth, 430);
       const hudH       = (hudTop ? hudTop.offsetHeight : 44) + (hudBot ? hudBot.offsetHeight : 36);
-      const canvasH    = window.innerHeight - hudH;
+      const canvasH    = Math.max(120, window.innerHeight - hudH);
 
       // CSS サイズ
       canvas.style.width  = wrapW + 'px';
@@ -1406,12 +2127,21 @@
       canvas.width  = Math.round(wrapW  * dpr);
       canvas.height = Math.round(canvasH * dpr);
 
-      // 描画コンテキストのスケールを合わせる(Phase 2 で使用)
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.scale(dpr, dpr);
+      // 論理座標系の確定: 論理幅 400 固定 → スケールと論理高さを算出
+      canvasDpr   = dpr;
+      canvasScale = wrapW / CANVAS_LOGIC_WIDTH;
+      LOGIC_H     = canvasH / canvasScale;
+
+      // 描画コンテキスト: 論理座標 → 物理ピクセルへ一括変換
+      // setTransform(dpr*scale, 0, 0, dpr*scale, 0, 0)
+      canvasCtx = canvas.getContext('2d');
+      if (canvasCtx) {
+        const k = dpr * canvasScale;
+        canvasCtx.setTransform(k, 0, 0, k, 0, 0);
       }
+
+      // 機体が画面外に取り残されないようクランプし直す
+      clampPlayer();
     }
     window.addEventListener('resize', resizeCanvas);
 
