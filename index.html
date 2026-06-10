@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>マロン飛行</title>
+  <style>
+    /* ===== ベースリセット ===== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      height: 100%;
+      overflow: hidden;
+      overflow-x: hidden;
+    }
+
+    body {
+      height: 100%;
+      overflow: hidden;
+      overflow-x: hidden;
+      background: #1a1a2e;
+      font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+      color: #f0f0f0;
+      /* ゲーム中のデフォルト抑止(画面ごとに上書き) */
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: none;
+    }
+
+    /* ===== 画面共通ラッパー ===== */
+    .screen {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    .screen.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ホーム・名前入力・結果画面はスクロール可 */
+    #screen-home.active,
+    #screen-name.active,
+    #screen-result.active {
+      display: block;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+    }
+
+    /* ===== スクロール可画面の内側ラッパー ===== */
+    .scroll-inner {
+      min-height: 100%;
+      width: 100%;
+      max-width: 430px;
+      margin: 0 auto;
+      padding:
+        calc(16px + env(safe-area-inset-top, 0px))
+        calc(16px + env(safe-area-inset-right, 0px))
+        calc(32px + env(safe-area-inset-bottom, 0px))
+        calc(16px + env(safe-area-inset-left, 0px));
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* ===== ホーム画面 ===== */
+    #screen-home {
+      background: linear-gradient(180deg,
+        #0a0a1f 0%,
+        #1a1040 20%,
+        #2d1b4e 40%,
+        #6b2d6b 65%,
+        #c0603a 82%,
+        #e8854a 92%,
+        #f5a85a 100%
+      );
+    }
+
+    .home-title {
+      font-size: clamp(2.4rem, 9vw, 3.2rem);
+      font-weight: 900;
+      text-align: center;
+      letter-spacing: 0.05em;
+      color: #ffe88a;
+      text-shadow: 0 0 16px rgba(255,200,60,0.7), 0 2px 8px rgba(0,0,0,0.8);
+      margin-top: 8px;
+    }
+
+    .home-subtitle {
+      font-size: clamp(0.85rem, 3.2vw, 1rem);
+      text-align: center;
+      color: #e8d8b8;
+      line-height: 1.55;
+    }
+
+    .home-plane-art {
+      font-size: 4rem;
+      text-align: center;
+      margin: 8px 0;
+      filter: drop-shadow(0 0 12px rgba(255,220,100,0.7));
+    }
+
+    .home-concepts {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .concept-badge {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      color: #e8e0cc;
+      white-space: nowrap;
+    }
+
+    .home-cloud-row {
+      text-align: center;
+      font-size: 1.6rem;
+      letter-spacing: 0.1em;
+      opacity: 0.7;
+      margin: 4px 0;
+    }
+
+    /* ===== ボタン共通 ===== */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 52px;
+      width: 100%;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+      text-decoration: none;
+      transition: opacity 0.12s, transform 0.08s;
+    }
+    .btn:active {
+      opacity: 0.8;
+      transform: scale(0.97);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #f7a830, #e86b1a);
+      color: #1a0a00;
+      font-size: 1.15rem;
+      box-shadow: 0 4px 16px rgba(232,107,26,0.45);
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #f0f0f0;
+    }
+    .btn-danger {
+      background: linear-gradient(135deg, #d94040, #a02020);
+      color: #fff;
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid rgba(255,255,255,0.35);
+      color: #d8d0c8;
+      font-size: 0.9rem;
+    }
+
+    /* ===== モーダル ===== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      touch-action: none;
+    }
+    .modal-overlay.open {
+      display: flex;
+    }
+    .modal-box {
+      background: #1e1e38;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 16px;
+      padding: 24px 20px;
+      max-width: 380px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .modal-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      margin-bottom: 16px;
+      color: #ffe88a;
+    }
+    .modal-body {
+      font-size: 0.9rem;
+      line-height: 1.65;
+      color: #d8d8e8;
+    }
+    .modal-body p {
+      margin-bottom: 10px;
+    }
+    .modal-body strong {
+      color: #ffd070;
+    }
+    .modal-close {
+      margin-top: 20px;
+      min-height: 44px;
+    }
+    .rule-section {
+      background: rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+    }
+    .rule-section h3 {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #aaddff;
+      margin-bottom: 6px;
+    }
+    .rule-section p {
+      margin-bottom: 0;
+    }
+
+    /* ===== 名前入力画面 ===== */
+    #screen-name {
+      background: linear-gradient(180deg,
+        #0a0a1f 0%,
+        #1a1040 40%,
+        #2d1b4e 100%
+      );
+    }
+
+    .name-header {
+      font-size: 1.3rem;
+      font-weight: 800;
+      text-align: center;
+      color: #ffe88a;
+    }
+    .name-desc {
+      font-size: 0.88rem;
+      text-align: center;
+      color: #b8b0c8;
+      line-height: 1.5;
+    }
+
+    .name-input-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .name-label {
+      font-size: 0.88rem;
+      color: #a8a8c0;
+      font-weight: 600;
+    }
+
+    #player-name-input {
+      width: 100%;
+      min-height: 52px;
+      background: rgba(255,255,255,0.1);
+      border: 1.5px solid rgba(255,255,255,0.25);
+      border-radius: 10px;
+      color: #f0f0f0;
+      font-size: 1.1rem;
+      padding: 12px 14px;
+      outline: none;
+      -webkit-user-select: auto;
+      user-select: auto;
+      touch-action: auto;
+      -webkit-tap-highlight-color: transparent;
+      caret-color: #f7a830;
+      /* 日本語入力でのフォントを確保 */
+      font-family: inherit;
+    }
+    #player-name-input:focus {
+      border-color: #f7a830;
+      background: rgba(255,255,255,0.14);
+    }
+    #player-name-input::placeholder {
+      color: rgba(255,255,255,0.3);
+    }
+
+    .name-error {
+      font-size: 0.82rem;
+      color: #ff7070;
+      min-height: 20px;
+    }
+
+    /* ===== カウントダウン画面 ===== */
+    #screen-countdown {
+      background: linear-gradient(180deg,
+        #0a0a1f 0%,
+        #1a1040 40%,
+        #2d1b4e 100%
+      );
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+    }
+
+    .countdown-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    #countdown-number {
+      font-size: clamp(5rem, 22vw, 9rem);
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 32px rgba(255,200,100,0.8), 0 4px 20px rgba(0,0,0,0.9);
+      line-height: 1;
+      transition: transform 0.15s;
+    }
+    #countdown-number.pop {
+      transform: scale(1.18);
+    }
+
+    .countdown-ready {
+      font-size: 1rem;
+      color: #b8b0c8;
+      letter-spacing: 0.1em;
+    }
+
+    /* ===== ゲーム画面 ===== */
+    #screen-game {
+      background: #0a0a1f;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    /* ゲーム画面ラッパー:幅430px以内、中央揃え */
+    .game-wrapper {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-width: 430px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* ===== HUD 上段 ===== */
+    .hud-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding:
+        calc(6px + env(safe-area-inset-top, 0px))
+        calc(10px + env(safe-area-inset-right, 0px))
+        6px
+        calc(10px + env(safe-area-inset-left, 0px));
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      flex-shrink: 0;
+      min-height: 44px;
+      z-index: 10;
+    }
+
+    .hud-wave {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #ffd070;
+      min-width: 40px;
+    }
+
+    .hud-score {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #f0f0f0;
+      text-align: center;
+      flex: 1;
+    }
+
+    .btn-retire {
+      min-height: 36px;
+      min-width: 64px;
+      width: auto;
+      padding: 0 12px;
+      font-size: 0.82rem;
+      border-radius: 8px;
+      background: rgba(200,50,50,0.7);
+      border: 1px solid rgba(255,100,100,0.4);
+      color: #ffc0c0;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    .btn-retire:active {
+      background: rgba(200,50,50,0.9);
+    }
+
+    /* ===== HUD 下段 ===== */
+    .hud-bottom {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px calc(10px + env(safe-area-inset-right, 0px)) 4px calc(10px + env(safe-area-inset-left, 0px));
+      background: rgba(0,0,0,0.45);
+      flex-shrink: 0;
+      min-height: 36px;
+      z-index: 10;
+    }
+
+    .hud-lv {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #80ffcc;
+      white-space: nowrap;
+    }
+
+    .hud-expbar-wrap {
+      flex: 1;
+      height: 6px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    #hud-expbar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #40e0a0, #80ffcc);
+      border-radius: 3px;
+      width: 0%;
+      transition: width 0.25s;
+    }
+
+    .hud-hp {
+      font-size: 0.82rem;
+      color: #ff8080;
+      white-space: nowrap;
+    }
+    .hud-shield {
+      font-size: 0.82rem;
+      color: #80c8ff;
+      white-space: nowrap;
+    }
+
+    /* ===== キャンバス ===== */
+    #game-canvas {
+      display: block;
+      flex: 1;
+      width: 100%;
+      /* actual pixel dimensions set by JS */
+    }
+
+    /* ===== 結果画面 ===== */
+    #screen-result {
+      background: linear-gradient(180deg,
+        #0a0a1f 0%,
+        #1a1040 30%,
+        #2d1b4e 100%
+      );
+    }
+
+    .result-title {
+      font-size: 1.5rem;
+      font-weight: 900;
+      text-align: center;
+      color: #ffe88a;
+    }
+
+    .result-wave-display {
+      font-size: clamp(1.3rem, 5.5vw, 1.75rem);
+      font-weight: 900;
+      text-align: center;
+      color: #fff;
+      background: rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 14px 12px;
+    }
+    .result-wave-display .wave-label {
+      font-size: 0.78rem;
+      color: #a0a0b8;
+      font-weight: 500;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .result-score-display {
+      font-size: clamp(1.15rem, 4.5vw, 1.5rem);
+      font-weight: 800;
+      text-align: center;
+      color: #ffd070;
+    }
+
+    .result-stats {
+      display: flex;
+      justify-content: space-around;
+      gap: 8px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .stat-label {
+      font-size: 0.72rem;
+      color: #8888a8;
+    }
+    .stat-value {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #e0e0f0;
+    }
+
+    .result-submit-status {
+      text-align: center;
+      font-size: 0.88rem;
+      color: #a8a8c0;
+      min-height: 22px;
+    }
+
+    .result-best-update {
+      text-align: center;
+      font-size: 0.88rem;
+      color: #ffd070;
+      font-weight: 700;
+      min-height: 20px;
+    }
+
+    .result-btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .result-btn-row {
+      display: flex;
+      gap: 10px;
+    }
+    .result-btn-row .btn {
+      flex: 1;
+      font-size: 0.9rem;
+    }
+
+    /* ===== ランキング欄 ===== */
+    .ranking-section {
+      margin-top: 8px;
+    }
+    .ranking-title {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #aaddff;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    #ranking-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .ranking-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.84rem;
+    }
+    .ranking-item.is-you {
+      background: rgba(255,220,80,0.14);
+      border: 1px solid rgba(255,220,80,0.35);
+    }
+    .rank-no {
+      font-weight: 800;
+      color: #ffd070;
+      min-width: 28px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .rank-no.gold   { color: #ffd700; }
+    .rank-no.silver { color: #c0c0c0; }
+    .rank-no.bronze { color: #cd7f32; }
+    .rank-name {
+      flex: 1;
+      color: #e8e8f0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .rank-result {
+      color: #c8c8e0;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .ranking-loading {
+      text-align: center;
+      color: #6868a0;
+      font-size: 0.88rem;
+      padding: 16px 0;
+    }
+
+    /* ===== リタイア確認モーダル ===== */
+    #retire-modal .modal-box {
+      max-width: 320px;
+    }
+    .retire-modal-text {
+      font-size: 0.95rem;
+      color: #d8d8e8;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+    .retire-modal-text strong {
+      color: #ff9090;
+    }
+    .retire-btn-group {
+      display: flex;
+      gap: 10px;
+    }
+    .retire-btn-group .btn {
+      flex: 1;
+      font-size: 0.9rem;
+      min-height: 48px;
+    }
+
+    /* ===== コピー成功トースト ===== */
+    #toast {
+      position: fixed;
+      bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: rgba(20,20,40,0.92);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 24px;
+      padding: 10px 22px;
+      font-size: 0.88rem;
+      color: #d0ffd0;
+      z-index: 2000;
+      transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.28s;
+      opacity: 0;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================
+       ホーム画面
+  ======================================== -->
+  <div id="screen-home" class="screen">
+    <div class="scroll-inner">
+
+      <div class="home-title">マロン飛行</div>
+      <div class="home-plane-art">✈️</div>
+
+      <div class="home-subtitle">
+        戦利品を拾って機体を強化し、<br>30波突破を目指す
+      </div>
+
+      <div class="home-concepts">
+        <span class="concept-badge">🗡️ 敵を倒す</span>
+        <span class="concept-badge">🔧 戦利品で強化</span>
+        <span class="concept-badge">🏆 30波突破</span>
+      </div>
+
+      <div class="home-cloud-row">☁️ ☁️ ☁️</div>
+
+      <button class="btn btn-primary" id="btn-start">
+        🚀 ゲーム開始
+      </button>
+
+      <button class="btn btn-secondary" id="btn-rules">
+        📖 ルール説明
+      </button>
+
+      <button class="btn btn-secondary" id="btn-share-home">
+        🔗 ゲームをシェア
+      </button>
+
+      <a class="btn btn-outline" href="https://chameleonjp.codeberg.page/chameleonjp_lab/" target="_blank" rel="noopener noreferrer">
+        🧪 実験場へ
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ========================================
+       ルール説明モーダル
+  ======================================== -->
+  <div id="rules-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="rules-modal-title">
+    <div class="modal-box">
+      <div class="modal-title" id="rules-modal-title">📖 ゲームルール</div>
+      <div class="modal-body">
+
+        <div class="rule-section">
+          <h3>🎯 目的</h3>
+          <p>敵を倒して戦利品を拾い、機体を強化しながら<strong>30波突破</strong>を目指してください。</p>
+        </div>
+
+        <div class="rule-section">
+          <h3>🕹️ 操作</h3>
+          <p>画面をなぞると機体が動きます。ショットは<strong>自動発射</strong>です。</p>
+          <p>戦利品(🔧 ✨ 🎁)に<strong>機体を近づける</strong>と回収できます。</p>
+        </div>
+
+        <div class="rule-section">
+          <h3>⬆️ 強化</h3>
+          <p>戦利品を回収すると経験値が増え、レベルアップすると<strong>7種類の中からランダムに1つ強化</strong>されます。</p>
+        </div>
+
+        <div class="rule-section">
+          <h3>👾 ウェーブ</h3>
+          <p>全30波。<strong>5波ごとにボス</strong>が出現します。30波のボスを倒すとクリアです。</p>
+        </div>
+
+        <div class="rule-section">
+          <h3>🏳️ リタイアについて</h3>
+          <p>右上の「リタイア」ボタンから途中終了できますが、<strong>リタイア時はランキングに送信されません</strong>。</p>
+        </div>
+
+      </div>
+      <button class="btn btn-secondary modal-close" id="btn-rules-close">閉じる</button>
+    </div>
+  </div>
+
+  <!-- ========================================
+       名前入力画面
+  ======================================== -->
+  <div id="screen-name" class="screen">
+    <div class="scroll-inner">
+
+      <div class="name-header">パイロット名を入力</div>
+      <div class="name-desc">ランキングに表示される名前です。<br>絵文字もOK! 最大10文字</div>
+
+      <div class="name-input-wrap">
+        <label class="name-label" for="player-name-input">パイロット名</label>
+        <input
+          type="text"
+          id="player-name-input"
+          placeholder="例: マロン 🍀"
+          maxlength="10"
+          autocomplete="nickname"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+        >
+        <div class="name-error" id="name-error" role="alert" aria-live="polite"></div>
+      </div>
+
+      <button class="btn btn-primary" id="btn-name-start">
+        🚀 開始
+      </button>
+
+      <button class="btn btn-outline" id="btn-name-back">
+        ← ホームへ
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ========================================
+       カウントダウン画面
+  ======================================== -->
+  <div id="screen-countdown" class="screen">
+    <div class="countdown-wrap">
+      <div class="countdown-ready">準備完了</div>
+      <div id="countdown-number">3</div>
+    </div>
+  </div>
+
+  <!-- ========================================
+       ゲーム画面
+  ======================================== -->
+  <div id="screen-game" class="screen">
+    <div class="game-wrapper">
+
+      <!-- HUD 上段 -->
+      <div class="hud-top">
+        <div class="hud-wave" id="hud-wave">W1</div>
+        <div class="hud-score" id="hud-score">0</div>
+        <button class="btn-retire" id="btn-retire">リタイア</button>
+      </div>
+
+      <!-- HUD 下段 -->
+      <div class="hud-bottom">
+        <div class="hud-lv" id="hud-lv">Lv.1</div>
+        <div class="hud-expbar-wrap">
+          <div id="hud-expbar-fill"></div>
+        </div>
+        <div class="hud-hp" id="hud-hp">❤️❤️❤️</div>
+        <div class="hud-shield" id="hud-shield"></div>
+      </div>
+
+      <!-- キャンバス -->
+      <canvas id="game-canvas"></canvas>
+
+    </div>
+  </div>
+
+  <!-- リタイア確認モーダル -->
+  <div id="retire-modal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <div class="modal-title">🏳️ リタイアしますか?</div>
+      <div class="retire-modal-text">
+        このプレイは<strong>ランキングに送信されません</strong>。<br>
+        本当にリタイアしますか?
+      </div>
+      <div class="retire-btn-group">
+        <button class="btn btn-secondary" id="btn-retire-cancel">キャンセル</button>
+        <button class="btn btn-danger" id="btn-retire-ok">リタイア</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================
+       結果画面
+  ======================================== -->
+  <div id="screen-result" class="screen">
+    <div class="scroll-inner">
+
+      <div class="result-title" id="result-title">ゲームオーバー</div>
+
+      <div class="result-wave-display">
+        <span class="wave-label">到達</span>
+        <span id="result-wave-text">17波到達</span>
+      </div>
+
+      <div class="result-score-display">
+        <span id="result-score-text">184,500点</span>
+      </div>
+
+      <div class="result-stats">
+        <div class="stat-item">
+          <div class="stat-label">最終Lv</div>
+          <div class="stat-value" id="result-lv">Lv.8</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">撃破数</div>
+          <div class="stat-value" id="result-kills">123機</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">戦利品</div>
+          <div class="stat-value" id="result-loots">56個</div>
+        </div>
+      </div>
+
+      <div class="result-submit-status" id="submit-status">---</div>
+      <div class="result-best-update" id="result-best-update"></div>
+
+      <div class="result-btn-group">
+        <button class="btn btn-primary" id="btn-retry">🔄 もう一度</button>
+        <div class="result-btn-row">
+          <button class="btn btn-secondary" id="btn-share-result">🔗 結果をシェア</button>
+          <button class="btn btn-secondary" id="btn-home">🏠 ホームへ</button>
+        </div>
+        <a class="btn btn-outline" href="https://chameleonjp.codeberg.page/chameleonjp_lab/" target="_blank" rel="noopener noreferrer">
+          🧪 実験場へ
+        </a>
+      </div>
+
+      <!-- ランキング -->
+      <div class="ranking-section">
+        <div class="ranking-title">🏆 ランキング (上位10件)</div>
+        <div id="ranking-list">
+          <div class="ranking-loading">読み込み中...</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- コピー成功トースト -->
+  <div id="toast"></div>
+
+  <script>
+    // ===== [A] 定数・設定値 =====
+
+    const GAME_SLUG = 'maron_hikou';
+    const CLIENT_VERSION = 'v1';
+    const GAME_URL = 'https://chameleonjp.codeberg.page/maron_hikou/';
+    const LAB_URL = 'https://chameleonjp.codeberg.page/chameleonjp_lab/';
+    const CANVAS_LOGIC_WIDTH = 400;
+    const PLAYER_NAME_KEY = 'maron_hikou_player_name';
+
+    // スコア点数表 (§23)
+    const SCORE_TABLE = {
+      SMALL_ENEMY:   100,
+      MEDIUM_ENEMY:  300,
+      LARGE_ENEMY:   800,
+      BOSS:        5000,
+      LOOT:          30,
+      WAVE_BONUS_PER_WAVE: 500,
+      CLEAR_BONUS: 20000
+    };
+
+    // プレイヤー初期値 (§14)
+    const PLAYER_INIT = {
+      maxHp: 3,
+      hp:    3,
+      shield: 0,
+      bulletCount: 1,
+      fireRateLevel: 0,    // 0=標準, +1 ごとに速く
+      piercing: false,
+      collectRange: 60,    // px (論理座標)
+      hitRadius: 14        // 当たり判定半径
+    };
+
+    // レベルアップ強化定義 (§19)
+    const UPGRADES = [
+      { id: 'bullet',       label: '弾数+1',         max: 3 },
+      { id: 'firerate',     label: '連射速度アップ',  max: 4 },
+      { id: 'piercing',     label: '貫通弾',          max: 1 },
+      { id: 'shield',       label: 'シールド+1',      max: 3 },
+      { id: 'maxhp',        label: '最大耐久+1',      max: 3 },
+      { id: 'collectrange', label: '回収範囲アップ',  max: 3 },
+      { id: 'hitreduce',    label: '当たり判定縮小',  max: 2 }
+    ];
+
+    // 経験値テーブル (§20, Lv.1→12)
+    const EXP_TABLE = [0, 5, 12, 22, 35, 51, 70, 92, 118, 148, 182, 220];
+    // EXP_TABLE[i] = Lv.(i+1) に上がるために必要な累積経験値
+
+    const MAX_LEVEL = 12;
+
+    // ===== [B] 画面遷移マネージャ =====
+
+    const SCREENS = ['home', 'name', 'countdown', 'game', 'result'];
+
+    /**
+     * 指定した画面を active にし、他を非表示にする
+     * @param {string} name - 'home' | 'name' | 'countdown' | 'game' | 'result'
+     */
+    function showScreen(name) {
+      SCREENS.forEach(s => {
+        const el = document.getElementById('screen-' + s);
+        if (el) el.classList.toggle('active', s === name);
+      });
+    }
+
+    // ===== [C] 入力処理(タッチ抑止・スクロール禁止) =====
+
+    // --- ゲーム画面中のタッチ移動抑止 ---
+    // passive: false で呼ばないと preventDefault が効かないブラウザがある
+    function preventTouchMove(e) {
+      if (document.getElementById('screen-game').classList.contains('active')) {
+        if (e.cancelable) e.preventDefault();
+      }
+    }
+    document.addEventListener('touchmove', preventTouchMove, { passive: false });
+
+    // ダブルタップ拡大抑止(入力欄はカーソル操作を妨げないため除外)
+    let lastTap = 0;
+    document.addEventListener('touchend', function(e) {
+      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+      const now = Date.now();
+      if (now - lastTap < 300 && e.cancelable) {
+        e.preventDefault();
+      }
+      lastTap = now;
+    }, { passive: false });
+
+    // ピンチ・2本指ジェスチャー抑止
+    document.addEventListener('gesturestart', function(e) {
+      e.preventDefault();
+    }, { passive: false });
+    document.addEventListener('gesturechange', function(e) {
+      e.preventDefault();
+    }, { passive: false });
+    document.addEventListener('gestureend', function(e) {
+      e.preventDefault();
+    }, { passive: false });
+
+    // --- ポインタイベント処理(Phase 2 で実装) ---
+    function onPointerDown(e) { /* [C] Phase 2 で実装 */ }
+    function onPointerMove(e) { /* [C] Phase 2 で実装 */ }
+    function onPointerUp(e)   { /* [C] Phase 2 で実装 */ }
+
+    // ===== [D] ゲームステート =====
+
+    let gameState = {
+      score:     0,
+      wave:      1,
+      level:     1,
+      exp:       0,
+      hp:        PLAYER_INIT.hp,
+      maxHp:     PLAYER_INIT.maxHp,
+      shield:    PLAYER_INIT.shield,
+      kills:     0,
+      lootCount: 0,
+      isRetired: false,
+      isCleared: false,
+      // 強化カウント
+      upgradeCounts: {
+        bullet:       0,
+        firerate:     0,
+        piercing:     0,
+        shield:       0,
+        maxhp:        0,
+        collectrange: 0,
+        hitreduce:    0
+      },
+      // 送信済みフラグ(プレイごとに生成)
+      playId: null,
+      scoreSent: false
+    };
+
+    // プレイヤー座標・行動状態 (Phase 2 で使用)
+    let player = {
+      x: CANVAS_LOGIC_WIDTH / 2,
+      y: 500,
+      bulletCount:   PLAYER_INIT.bulletCount,
+      fireRateLevel: PLAYER_INIT.fireRateLevel,
+      piercing:      PLAYER_INIT.piercing,
+      collectRange:  PLAYER_INIT.collectRange,
+      hitRadius:     PLAYER_INIT.hitRadius,
+      invincibleUntil: 0
+    };
+
+    // ゲームオブジェクト配列 (Phase 2 で実装)
+    let enemies      = [];
+    let bullets      = [];
+    let enemyBullets = [];
+    let loots        = [];
+
+    /**
+     * ゲームステートをリセットして新しいプレイを開始する準備
+     */
+    function resetGameState() {
+      gameState = {
+        score:     0,
+        wave:      1,
+        level:     1,
+        exp:       0,
+        hp:        PLAYER_INIT.hp,
+        maxHp:     PLAYER_INIT.maxHp,
+        shield:    PLAYER_INIT.shield,
+        kills:     0,
+        lootCount: 0,
+        isRetired: false,
+        isCleared: false,
+        upgradeCounts: {
+          bullet:       0,
+          firerate:     0,
+          piercing:     0,
+          shield:       0,
+          maxhp:        0,
+          collectrange: 0,
+          hitreduce:    0
+        },
+        playId: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
+        scoreSent: false
+      };
+      player = {
+        x: CANVAS_LOGIC_WIDTH / 2,
+        y: 500,
+        bulletCount:   PLAYER_INIT.bulletCount,
+        fireRateLevel: PLAYER_INIT.fireRateLevel,
+        piercing:      PLAYER_INIT.piercing,
+        collectRange:  PLAYER_INIT.collectRange,
+        hitRadius:     PLAYER_INIT.hitRadius,
+        invincibleUntil: 0
+      };
+      enemies      = [];
+      bullets      = [];
+      enemyBullets = [];
+      loots        = [];
+    }
+
+    // ===== [E] ゲームループ(requestAnimationFrame) =====
+
+    let animFrameId = null;
+    let lastTimestamp = 0;
+
+    /**
+     * ゲームループ開始
+     * カウントダウン完了後に呼ばれる
+     */
+    function startGame() {
+      lastTimestamp = 0;
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+      animFrameId = requestAnimationFrame(gameLoop);
+    }
+
+    /**
+     * ゲームループ本体 (Phase 2 で実装)
+     */
+    function gameLoop(timestamp) {
+      if (!document.getElementById('screen-game').classList.contains('active')) return;
+      const delta = lastTimestamp === 0 ? 0 : Math.min((timestamp - lastTimestamp) / 1000, 0.05);
+      lastTimestamp = timestamp;
+
+      // [E] Phase 2: update(delta), checkCollisions(), draw()
+      updateHUD();
+
+      animFrameId = requestAnimationFrame(gameLoop);
+    }
+
+    /**
+     * HUD を gameState の値で更新
+     */
+    function updateHUD() {
+      document.getElementById('hud-wave').textContent  = 'W' + gameState.wave;
+      document.getElementById('hud-score').textContent = formatScore(gameState.score);
+      document.getElementById('hud-lv').textContent    = 'Lv.' + gameState.level;
+
+      // 経験値バー(EXP_TABLE[i] = Lv.(i+1) 到達に必要な累積経験値)
+      const expForNext = gameState.level < MAX_LEVEL ? EXP_TABLE[gameState.level] : 0;
+      const expPrev    = EXP_TABLE[gameState.level - 1] || 0;
+      const range      = expForNext - expPrev;
+      const pct        = (gameState.level >= MAX_LEVEL) ? 100
+                       : range > 0 ? Math.min(100, Math.floor((gameState.exp - expPrev) / range * 100)) : 0;
+      document.getElementById('hud-expbar-fill').style.width = pct + '%';
+
+      // 耐久
+      const hearts = '❤️'.repeat(Math.max(0, gameState.hp)) + '🖤'.repeat(Math.max(0, gameState.maxHp - gameState.hp));
+      document.getElementById('hud-hp').textContent = hearts;
+
+      // シールド
+      const shieldEl = document.getElementById('hud-shield');
+      shieldEl.textContent = gameState.shield > 0 ? '🛡️×' + gameState.shield : '';
+    }
+
+    // ===== [F] ウェーブ・敵生成 =====
+    // (Phase 4 で実装。以下はプレースホルダ)
+
+    /**
+     * 指定ウェーブを開始する (Phase 4 で実装)
+     */
+    function startWave(waveNo) {
+      // TODO: Phase 4
+    }
+
+    /**
+     * ウェーブクリア判定 (Phase 4 で実装)
+     */
+    function checkWaveClear() {
+      // TODO: Phase 4
+    }
+
+    // ===== [G] 戦利品・経験値・レベルアップ・強化抽選 =====
+    // (Phase 3 で実装。以下はプレースホルダ)
+
+    /**
+     * 経験値を加算し、レベルアップが発生すれば強化抽選を行う (Phase 3 で実装)
+     * @param {number} amount
+     */
+    function addExp(amount) {
+      // TODO: Phase 3
+    }
+
+    /**
+     * 強化抽選を行い gameState に適用する (Phase 3 で実装)
+     */
+    function rollUpgrade() {
+      // TODO: Phase 3
+    }
+
+    /**
+     * 戦利品を生成してloots配列に追加 (Phase 3 で実装)
+     * @param {number} x
+     * @param {number} y
+     * @param {'normal'|'large'|'boss'} type
+     */
+    function spawnLoot(x, y, type) {
+      // TODO: Phase 3
+    }
+
+    // ===== [H] スコア・結果集計 =====
+
+    /**
+     * スコアを加算する
+     * @param {number} pts
+     */
+    function addScore(pts) {
+      gameState.score = Math.min(gameState.score + pts, 9_999_999);
+    }
+
+    /**
+     * ゲーム終了処理(ゲームオーバー / クリア)
+     * @param {boolean} cleared
+     */
+    function endGame(cleared) {
+      if (animFrameId) {
+        cancelAnimationFrame(animFrameId);
+        animFrameId = null;
+      }
+      gameState.isCleared = cleared;
+      showResultScreen();
+    }
+
+    /**
+     * ranking_score の合成
+     * ranking_score = 進行度 × 10,000,000 + 表示用スコア (§24, §31)
+     */
+    function buildRankingScore() {
+      const progress = gameState.isCleared ? 31 : gameState.wave;
+      return progress * 10_000_000 + Math.min(gameState.score, 9_999_999);
+    }
+
+    /**
+     * ranking_score から進行度・表示用スコアを復元
+     * @param {number} rs
+     * @returns {{ progress: number, displayScore: number }}
+     */
+    function parseRankingScore(rs) {
+      const progress     = Math.floor(rs / 10_000_000);
+      const displayScore = rs % 10_000_000;
+      return { progress, displayScore };
+    }
+
+    /**
+     * 進行度から表示文字列を返す
+     * @param {number} progress
+     * @returns {string}
+     */
+    function progressToLabel(progress) {
+      if (progress >= 31) return '30波クリア';
+      return progress + '波到達';
+    }
+
+    /**
+     * 結果画面を表示・更新する
+     */
+    function showResultScreen() {
+      // タイトル
+      const titleEl = document.getElementById('result-title');
+      titleEl.textContent = gameState.isCleared ? '🎉 クリア!' : gameState.isRetired ? '🏳️ リタイア' : '💥 ゲームオーバー';
+
+      // 到達状況
+      const waveText = gameState.isCleared ? '30波クリア' : gameState.wave + '波到達';
+      document.getElementById('result-wave-text').textContent = waveText;
+
+      // スコア
+      document.getElementById('result-score-text').textContent = formatScore(gameState.score) + '点';
+
+      // 詳細
+      document.getElementById('result-lv').textContent    = 'Lv.' + gameState.level;
+      document.getElementById('result-kills').textContent  = gameState.kills + '機';
+      document.getElementById('result-loots').textContent  = gameState.lootCount + '個';
+
+      // 送信状態(Phase 5 で更新)
+      document.getElementById('submit-status').textContent =
+        gameState.isRetired ? 'リタイアのため送信なし' : '---';
+
+      // ベスト更新
+      document.getElementById('result-best-update').textContent = '';
+
+      // ランキング欄(Phase 5 で実装)
+      document.getElementById('ranking-list').innerHTML =
+        '<div class="ranking-loading">読み込み中...</div>';
+
+      showScreen('result');
+
+      // Phase 5: submitScore(); fetchRanking();
+    }
+
+    // ===== [I] Supabase 連携 =====
+    // (Phase 5 で実装。以下はプレースホルダ)
+
+    /**
+     * ランキングスコアを Supabase へ送信 (Phase 5 で実装)
+     */
+    async function submitScore() {
+      // TODO: Phase 5
+    }
+
+    /**
+     * ランキング上位10件を取得して表示 (Phase 5 で実装)
+     */
+    async function fetchRanking() {
+      // TODO: Phase 5
+    }
+
+    // ===== [J] シェア =====
+
+    /**
+     * 文字列をシェア or クリップボードコピー
+     * @param {string} text
+     */
+    async function shareText(text) {
+      if (navigator.share) {
+        try {
+          await navigator.share({ text });
+          return;
+        } catch (e) {
+          // ユーザーキャンセルは無視
+          if (e.name === 'AbortError') return;
+        }
+      }
+      // フォールバック: クリップボードコピー
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          // 旧来の方法
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.focus();
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+        }
+        showToast('コピーしました!');
+      } catch (e) {
+        showToast('コピーできませんでした');
+      }
+    }
+
+    /**
+     * ゲーム紹介シェア文 (§29)
+     */
+    function getIntroShareText() {
+      return `マロン飛行\n敵を倒して戦利品を集め、機体を強化しながら30波突破を目指す縦スクロール飛行機シューティングです。\n${GAME_URL}`;
+    }
+
+    /**
+     * 結果シェア文 (§29)
+     */
+    function getResultShareText() {
+      const waveLabel = gameState.isCleared ? '30波クリア' : gameState.wave + '波到達';
+      return `マロン飛行\n${waveLabel}\nスコア:${formatScore(gameState.score)}点\n最終Lv:${gameState.level}\n敵を倒して戦利品を集め、機体を強化しながら30波突破を目指す縦スクロール飛行機シューティングです。\n${GAME_URL}`;
+    }
+
+    // ===== ユーティリティ =====
+
+    /**
+     * 数値をカンマ区切り文字列にフォーマット
+     * @param {number} n
+     * @returns {string}
+     */
+    function formatScore(n) {
+      return n.toLocaleString('ja-JP');
+    }
+
+    /**
+     * トーストメッセージを表示
+     * @param {string} msg
+     */
+    function showToast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 2200);
+    }
+
+    // ===== Canvas リサイズ処理 =====
+
+    /**
+     * canvas のサイズをデバイスピクセル比と画面サイズに合わせて設定
+     */
+    function resizeCanvas() {
+      const gameEl   = document.getElementById('screen-game');
+      const wrapper  = gameEl.querySelector('.game-wrapper');
+      const canvas   = document.getElementById('game-canvas');
+      const hudTop   = gameEl.querySelector('.hud-top');
+      const hudBot   = gameEl.querySelector('.hud-bottom');
+      if (!canvas || !wrapper) return;
+
+      const dpr        = window.devicePixelRatio || 1;
+      const wrapW      = Math.min(window.innerWidth, 430);
+      const hudH       = (hudTop ? hudTop.offsetHeight : 44) + (hudBot ? hudBot.offsetHeight : 36);
+      const canvasH    = window.innerHeight - hudH;
+
+      // CSS サイズ
+      canvas.style.width  = wrapW + 'px';
+      canvas.style.height = canvasH + 'px';
+
+      // バッファサイズ(DPR対応)
+      canvas.width  = Math.round(wrapW  * dpr);
+      canvas.height = Math.round(canvasH * dpr);
+
+      // 描画コンテキストのスケールを合わせる(Phase 2 で使用)
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(dpr, dpr);
+      }
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    // ===== カウントダウン処理 =====
+
+    /**
+     * カウントダウン 3→2→1→GO を実行し、終了後に startGame() を呼ぶ
+     */
+    function runCountdown() {
+      showScreen('countdown');
+      const numEl = document.getElementById('countdown-number');
+      const steps = [
+        { text: '3', wait: 1000 },
+        { text: '2', wait: 1000 },
+        { text: '1', wait: 1000 },
+        { text: 'GO', wait: 500 }
+      ];
+      let i = 0;
+
+      function step() {
+        if (i >= steps.length) {
+          showScreen('game');
+          resizeCanvas();
+          startGame();
+          return;
+        }
+        numEl.textContent = steps[i].text;
+        // pop アニメーション
+        numEl.classList.remove('pop');
+        void numEl.offsetWidth; // reflow
+        numEl.classList.add('pop');
+        setTimeout(step, steps[i].wait);
+        i++;
+      }
+      step();
+    }
+
+    // ===== ホーム画面のイベント =====
+
+    document.getElementById('btn-start').addEventListener('click', function() {
+      showScreen('name');
+      // 保存済みの名前を復元
+      const saved = localStorage.getItem(PLAYER_NAME_KEY) || '';
+      document.getElementById('player-name-input').value = saved;
+      document.getElementById('name-error').textContent = '';
+    });
+
+    document.getElementById('btn-rules').addEventListener('click', function() {
+      document.getElementById('rules-modal').classList.add('open');
+    });
+
+    document.getElementById('btn-rules-close').addEventListener('click', function() {
+      document.getElementById('rules-modal').classList.remove('open');
+    });
+
+    // モーダル外クリックで閉じる
+    document.getElementById('rules-modal').addEventListener('click', function(e) {
+      if (e.target === this) this.classList.remove('open');
+    });
+
+    document.getElementById('btn-share-home').addEventListener('click', function() {
+      shareText(getIntroShareText());
+    });
+
+    // ===== 名前入力画面のイベント =====
+
+    document.getElementById('btn-name-start').addEventListener('click', function() {
+      const input = document.getElementById('player-name-input');
+      const name  = input.value.trim();
+      const errorEl = document.getElementById('name-error');
+      if (!name) {
+        errorEl.textContent = '名前を入力してください';
+        input.focus();
+        return;
+      }
+      errorEl.textContent = '';
+      localStorage.setItem(PLAYER_NAME_KEY, input.value.trim());
+      resetGameState();
+      runCountdown();
+    });
+
+    document.getElementById('btn-name-back').addEventListener('click', function() {
+      showScreen('home');
+    });
+
+    // Enter キーで開始
+    document.getElementById('player-name-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        document.getElementById('btn-name-start').click();
+      }
+    });
+
+    // ===== ゲーム画面のイベント =====
+
+    document.getElementById('btn-retire').addEventListener('click', function() {
+      document.getElementById('retire-modal').classList.add('open');
+    });
+
+    document.getElementById('btn-retire-cancel').addEventListener('click', function() {
+      document.getElementById('retire-modal').classList.remove('open');
+    });
+
+    document.getElementById('btn-retire-ok').addEventListener('click', function() {
+      document.getElementById('retire-modal').classList.remove('open');
+      if (animFrameId) {
+        cancelAnimationFrame(animFrameId);
+        animFrameId = null;
+      }
+      gameState.isRetired = true;
+      showResultScreen();
+    });
+
+    // リタイアモーダル外クリックで閉じる
+    document.getElementById('retire-modal').addEventListener('click', function(e) {
+      if (e.target === this) this.classList.remove('open');
+    });
+
+    // Canvas でのポインタイベント登録(Phase 2 で本体実装)
+    const gameCanvas = document.getElementById('game-canvas');
+    gameCanvas.addEventListener('pointerdown', onPointerDown, { passive: false });
+    gameCanvas.addEventListener('pointermove', onPointerMove, { passive: false });
+    gameCanvas.addEventListener('pointerup',   onPointerUp,   { passive: false });
+    gameCanvas.addEventListener('pointercancel', onPointerUp, { passive: false });
+
+    // ===== 結果画面のイベント =====
+
+    document.getElementById('btn-retry').addEventListener('click', function() {
+      showScreen('name');
+      const saved = localStorage.getItem(PLAYER_NAME_KEY) || '';
+      document.getElementById('player-name-input').value = saved;
+      document.getElementById('name-error').textContent = '';
+    });
+
+    document.getElementById('btn-share-result').addEventListener('click', function() {
+      shareText(getResultShareText());
+    });
+
+    document.getElementById('btn-home').addEventListener('click', function() {
+      showScreen('home');
+    });
+
+    // ===== 初期表示 =====
+
+    // 最初はホーム画面を表示
+    showScreen('home');
+
+  </script>
+</body>
+</html>
