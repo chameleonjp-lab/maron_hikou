@@ -1032,11 +1032,151 @@
         emoji: '🛫', color: '#FF6A5A', fireInterval: 2.8, shots: 3
       },
       boss: {
-        hp: 1,   speedRange: [0, 0],    radius: 44, score: SCORE_TABLE.BOSS,
+        hp: 60,  speedRange: [0, 0],    radius: 44, score: SCORE_TABLE.BOSS,
         emoji: '🛸', color: '#C080FF', fireInterval: 0, shots: 0
-        // Phase 4 で HP・弾幕を設定
+        // 実 HP・弾幕パラメータはウェーブ構成 (getWaveConfig) で上書きする
       }
     };
+
+    // ===== ウェーブ・ボス設定 (Phase 4, §16/§21/§23) =====
+
+    // ボス段位ごとの設定。番号 = 何番目のボスか(5波→1, 10波→2, …, 30波→6)。
+    //  hp:    ボス体力(§21 指定値)
+    //  tier:  弾幕パターン段階(1: 3-way, 2: 5-way+aimed, 3: 5-way+aimed2連+円形弾)
+    //  fire:  通常時の攻撃間隔(秒)。HP 50% 以下で 0.75 倍に短縮(フェーズ制)。
+    const BOSS_TABLE = {
+      5:  { hp: 60,  tier: 1, fire: 1.30 },
+      10: { hp: 110, tier: 1, fire: 1.15 },
+      15: { hp: 170, tier: 2, fire: 1.05 },
+      20: { hp: 240, tier: 2, fire: 0.95 },
+      25: { hp: 320, tier: 3, fire: 0.90 },
+      30: { hp: 420, tier: 3, fire: 0.85 }
+    };
+
+    // ボスが降りてきて停止する y(論理)と左右往復の振幅・周期
+    const BOSS_STOP_Y      = 90;
+    const BOSS_DESCEND_SPD = 60;            // 降下速度 px/s
+    const BOSS_SWAY_AMP    = 110;           // 左右往復の振幅 px
+    const BOSS_SWAY_PERIOD = 5.0;           // 往復周期 秒
+    const BOSS_RING_INTERVAL = 4.0;         // tier3 円形弾の周期 秒
+    const BOSS_RING_COUNT    = 12;          // 円形弾の方向数
+
+    /**
+     * ウェーブ番号 → 敵 HP スケーリング倍率 (§16/§21)。
+     * 11 波以降、(wave-10)*0.06 ずつ硬くする。切り上げで適用する。
+     * @param {number} waveNo
+     * @returns {number} 倍率(1.0 以上)
+     */
+    function waveHpScale(waveNo) {
+      if (waveNo <= 10) return 1;
+      return 1 + (waveNo - 10) * 0.06;
+    }
+
+    /**
+     * ウェーブ構成を返す (§21)。区間パラメータ + ウェーブ番号で生成する。
+     * 返り値:
+     *  - isBoss:  ボス波か
+     *  - spawns:  [{ type, x, pattern, t }] 出現予約のリスト(t = ウェーブ開始からの秒)
+     * 雑魚は出現タイミングを間隔で散らし、x はばらつかせる。編隊(同 x 連続)も区間で混ぜる。
+     * @param {number} waveNo 1〜30
+     * @returns {{ isBoss: boolean, spawns: Array }}
+     */
+    function getWaveConfig(waveNo) {
+      const isBoss = (waveNo % 5 === 0);
+      const spawns = [];
+      const W = CANVAS_LOGIC_WIDTH;
+      const randX = () => rand(40, W - 40);
+
+      // 雑魚を count 体、interval 間隔(±ゆらぎ)で予約する小ヘルパ。
+      // startT: 最初の出現時刻。patterns: 使う移動パターン配列(ランダム選択)。
+      // formation: true なら数体ごとに同じ x で連続出現(編隊)。
+      function addGroup(type, count, startT, interval, patterns, formation) {
+        let t = startT;
+        let fx = randX();
+        let fLeft = 0;
+        for (let i = 0; i < count; i++) {
+          let x;
+          if (formation && fLeft > 0) {
+            x = fx; fLeft--;
+          } else if (formation) {
+            fx = randX();
+            fLeft = 2;              // 同 x で 3 連(初回 + 2)
+            x = fx;
+          } else {
+            x = randX();
+          }
+          const pat = patterns[Math.floor(Math.random() * patterns.length)];
+          spawns.push({ type: type, x: x, pattern: pat, t: t });
+          t += interval * rand(0.8, 1.2);
+        }
+      }
+
+      if (isBoss) {
+        // ボス波: ボス + 護衛雑魚。ボスは t=0 で出す(降下演出は update 側)。
+        spawns.push({ type: 'boss', x: W / 2, pattern: 'boss', t: 0 });
+        if (waveNo === 5) {
+          addGroup('small', 4, 1.0, 1.6, ['straight', 'sway']);
+        } else if (waveNo === 10) {
+          addGroup('small', 6, 1.0, 1.4, ['straight', 'sway', 'zigzag']);
+        } else if (waveNo === 15) {
+          addGroup('medium', 3, 1.2, 2.2, ['straight', 'sway']);
+        } else if (waveNo === 20) {
+          addGroup('medium', 3, 1.2, 2.0, ['sway', 'zigzag']);
+        } else if (waveNo === 25) {
+          addGroup('large', 2, 1.5, 3.0, ['straight', 'sway']);
+        } else { // 30: 最終ボス + 護衛 medium 2
+          addGroup('medium', 2, 1.2, 2.2, ['sway', 'zigzag']);
+        }
+        return { isBoss: true, spawns: spawns };
+      }
+
+      // --- 通常波: 区間別の編成 (§21) ---
+      if (waveNo <= 4) {
+        // 1〜4波: small のみ 6〜10体、直進中心。wave2 から sway 混在。
+        const count = 6 + (waveNo - 1);                 // 6,7,8,9
+        const pats = waveNo >= 2 ? ['straight', 'straight', 'sway'] : ['straight'];
+        addGroup('small', count, 0.6, 1.5, pats);
+      } else if (waveNo <= 9) {
+        // 6〜9波: small 8〜12 + medium 1〜3。sway/zigzag 混在。
+        const sCount = 8 + (waveNo - 6);                // 8,9,10,11
+        const mCount = 1 + Math.floor((waveNo - 6) / 1.5); // 1,1,2,3
+        addGroup('small', sCount, 0.6, 1.3, ['straight', 'sway', 'zigzag']);
+        addGroup('medium', mCount, 2.0, 3.0, ['straight', 'sway']);
+      } else if (waveNo <= 14) {
+        // 11〜14波: small 10〜14 + medium 3〜5 + large 1〜2。
+        const sCount = 10 + (waveNo - 11) + 1;          // 11,12,13,14
+        const mCount = 3 + Math.floor((waveNo - 11) / 2); // 3,3,4,4
+        const lCount = 1 + Math.floor((waveNo - 11) / 3); // 1,1,1,2
+        addGroup('small', sCount, 0.5, 1.1, ['straight', 'sway', 'zigzag']);
+        addGroup('medium', mCount, 1.5, 2.2, ['sway', 'zigzag']);
+        addGroup('large', lCount, 3.0, 4.0, ['straight', 'sway']);
+      } else if (waveNo <= 19) {
+        // 16〜19波: medium 5〜7 + large 2〜3 + small 編隊。
+        const mCount = 5 + Math.floor((waveNo - 16) / 1.5); // 5,5,6,7
+        const lCount = 2 + Math.floor((waveNo - 16) / 3);   // 2,2,2,3
+        addGroup('small', 9, 0.5, 0.9, ['straight', 'sway'], true); // 編隊
+        addGroup('medium', mCount, 1.4, 1.8, ['sway', 'zigzag']);
+        addGroup('large', lCount, 2.5, 3.2, ['straight', 'sway']);
+      } else if (waveNo <= 24) {
+        // 21〜24波: 全種増量。敵弾密度上昇(fireInterval ×0.85 は spawn 時に適用)。
+        const sCount = 12 + (waveNo - 21);              // 12,13,14,15
+        const mCount = 5 + Math.floor((waveNo - 21) / 1.2); // 5,5,6,7
+        const lCount = 2 + Math.floor((waveNo - 21) / 2);   // 2,2,3,3
+        addGroup('small', sCount, 0.4, 0.85, ['straight', 'sway', 'zigzag'], true);
+        addGroup('medium', mCount, 1.2, 1.6, ['sway', 'zigzag']);
+        addGroup('large', lCount, 2.2, 2.8, ['sway', 'zigzag']);
+      } else {
+        // 26〜29波: 高密度最終区間(small 14〜18 + medium 6〜8 + large 3〜4)。
+        const sCount = 14 + Math.floor((waveNo - 26) * 1.3); // 14,15,16,17
+        const mCount = 6 + Math.floor((waveNo - 26) / 1.5);  // 6,6,7,8
+        const lCount = 3 + Math.floor((waveNo - 26) / 3);    // 3,3,3,4
+        addGroup('small', sCount, 0.3, 0.7, ['straight', 'sway', 'zigzag'], true);
+        addGroup('medium', mCount, 1.0, 1.3, ['sway', 'zigzag']);
+        addGroup('large', lCount, 2.0, 2.4, ['sway', 'zigzag']);
+      }
+
+      return { isBoss: false, spawns: spawns };
+    }
 
     // ===== [B] 画面遷移マネージャ =====
 
@@ -1200,8 +1340,18 @@
     let effects      = [];   // 爆発などの一時演出 (Phase 2)
     let floatTexts   = [];   // レベルアップ等の浮遊テキスト (Phase 3, MAX_EFFECTS の cull に巻き込まれない別配列)
 
-    // テスト用スポーンのタイマー類(Phase 4 のウェーブ制で置換)
-    let _spawnTimers = { small: 0, medium: 0, large: 0 };
+    // ウェーブ進行ランタイム状態 (Phase 4)
+    //  queue:        このウェーブの残りスポーン予約(t 昇順)。先頭から消化。
+    //  elapsed:      ウェーブ開始からの経過秒(queue の t と比較)。
+    //  isBossWave:   ボス波か。
+    //  bossSpawned:  ボスを spawn 済みか(ボス波のクリア判定に使う)。
+    //  active:       ウェーブが進行中か(false の間は新規スポーンを止める=ウェーブ間待機)。
+    //  nextTimer:    次ウェーブ開始までの残り秒(ウェーブ間待機中のみ正)。
+    //  pendingNext:  次に開始するウェーブ番号(待機中のみ)。
+    let waveState = {
+      queue: [], elapsed: 0, isBossWave: false, bossSpawned: false,
+      active: false, nextTimer: 0, pendingNext: 0
+    };
 
     /**
      * ゲームステートをリセットして新しいプレイを開始する準備
@@ -1255,8 +1405,11 @@
       gameTime     = 0;
       // HUD キャッシュをリセット(値が変わった時だけ DOM 更新するため)
       _hudCache = {};
-      // テスト用スポーンのタイマー類もリセット(Phase 4 で置換)
-      _spawnTimers = { small: 0, medium: 0, large: 0 };
+      // ウェーブ進行ランタイム状態もリセット
+      waveState = {
+        queue: [], elapsed: 0, isBossWave: false, bossSpawned: false,
+        active: false, nextTimer: 0, pendingNext: 0
+      };
     }
 
     // ===== [E] ゲームループ(requestAnimationFrame) =====
@@ -1273,8 +1426,12 @@
     function startGame() {
       lastTimestamp = 0;
       if (animFrameId) cancelAnimationFrame(animFrameId);
-      // テスト用ウェーブ開始(Phase 4 で本実装に置換)
-      startWave(gameState.wave);
+      // 開発用フック: URL ハッシュ #w=12 で開始ウェーブを変更(1〜30。リリースでも実害なし)
+      let startWaveNo = 1;
+      const m = /[#&]w=(\d+)/.exec(location.hash || '');
+      if (m) startWaveNo = Math.max(1, Math.min(30, parseInt(m[1], 10)));
+      // 最初のウェーブを開始(gameState.wave は startWave 内で設定される)
+      startWave(startWaveNo);
       animFrameId = requestAnimationFrame(gameLoop);
     }
 
@@ -1317,8 +1474,8 @@
       updateLoots(delta);
       updateFloatTexts(delta);
 
-      // テスト用スポーン(Phase 4 のウェーブ制で置換)
-      updateTestSpawns(delta);
+      // ウェーブ進行(スポーンキュー消化・クリア判定・次ウェーブ移行)
+      updateWave(delta);
 
       cullObjects();
     }
@@ -1388,13 +1545,30 @@
 
     /**
      * 敵を生成して enemies に追加する。
+     * ウェーブ番号(現在の gameState.wave)に応じて HP をスケーリングし、
+     * 21 波以降は medium/large の弾密度(fireInterval)を 0.85 倍にする (§16/§21)。
+     * type が 'boss' のときはボス専用パラメータ(BOSS_TABLE)で生成する。
      * @param {'small'|'medium'|'large'|'boss'} type
      * @param {number} x 出現 x(論理)
-     * @param {'straight'|'sway'|'zigzag'} pattern 移動パターン
+     * @param {'straight'|'sway'|'zigzag'|'boss'} pattern 移動パターン
      */
     function spawnEnemy(type, x, pattern) {
       const def = ENEMY_TYPES[type];
       if (!def) return;
+
+      if (type === 'boss') {
+        spawnBoss(x);
+        return;
+      }
+
+      const waveNo = gameState.wave;
+      // 後半ウェーブの HP 強化(切り上げ)
+      const hp = Math.ceil(def.hp * waveHpScale(waveNo));
+      // 弾密度上昇: 21 波以降は medium/large の発射間隔を短縮 (§21)
+      let fireInterval = def.fireInterval;
+      if (fireInterval > 0 && waveNo >= 21 && (type === 'medium' || type === 'large')) {
+        fireInterval *= 0.85;
+      }
       const speed = rand(def.speedRange[0], def.speedRange[1]);
       enemies.push({
         type: type,
@@ -1402,8 +1576,8 @@
         y: -40,
         baseX: x,                       // sway の中心 x
         r: def.radius,
-        hp: def.hp,
-        maxHp: def.hp,
+        hp: hp,
+        maxHp: hp,
         speed: speed,
         score: def.score,
         emoji: def.emoji,
@@ -1412,10 +1586,45 @@
         swayT: Math.random() * Math.PI * 2, // sway 位相をばらす
         zigDir: Math.random() < 0.5 ? -1 : 1,
         zigTimer: 0,
-        fireInterval: def.fireInterval,
+        fireInterval: fireInterval,
         shots: def.shots,
         // 最初の発砲まで少し猶予(出現直後に撃たない)
-        fireTimer: def.fireInterval > 0 ? rand(def.fireInterval * 0.5, def.fireInterval) : 0,
+        fireTimer: fireInterval > 0 ? rand(fireInterval * 0.5, fireInterval) : 0,
+        // 後半区間(medium/large)はランダムに狙い撃ち敵を混ぜる
+        aimed: (type === 'medium' && waveNo >= 11 && Math.random() < 0.4),
+        age: 0
+      });
+    }
+
+    /**
+     * ボスを生成する (§16/§21)。現在の gameState.wave に対応する BOSS_TABLE を使う。
+     * 画面上部 BOSS_STOP_Y まで降下 → 左右往復。弾幕は tier に応じてフェーズ制。
+     * @param {number} x 出現 x(論理。中央)
+     */
+    function spawnBoss(x) {
+      const conf = BOSS_TABLE[gameState.wave] || BOSS_TABLE[30];
+      const def = ENEMY_TYPES.boss;
+      enemies.push({
+        type: 'boss',
+        isBoss: true,
+        x: x,
+        y: -60,
+        baseX: x,
+        r: def.radius,
+        hp: conf.hp,
+        maxHp: conf.hp,
+        speed: 0,
+        score: def.score,
+        emoji: def.emoji,
+        color: def.color,
+        pattern: 'boss',
+        tier: conf.tier,
+        baseFire: conf.fire,
+        fireTimer: 1.2,                 // 登場後すぐは撃たない
+        ringTimer: BOSS_RING_INTERVAL,  // tier3 円形弾の周期
+        aimToggle: false,               // 5-way と aimed を交互に出すための切替
+        swayT: 0,
+        arrived: false,                 // 停止位置に到達したか
         age: 0
       });
     }
@@ -1424,6 +1633,12 @@
       for (let i = 0; i < enemies.length; i++) {
         const e = enemies[i];
         e.age += delta;
+
+        if (e.isBoss) {
+          updateBoss(e, delta);
+          continue;
+        }
+
         // 下方向へ前進
         e.y += e.speed * delta;
 
@@ -1477,6 +1692,124 @@
           y: sy,
           vx: Math.cos(a) * ENEMY_BULLET_SPEED,
           vy: Math.sin(a) * ENEMY_BULLET_SPEED,
+          r: ENEMY_BULLET_RADIUS
+        });
+      }
+      if (enemyBullets.length > MAX_ENEMY_BULLETS) {
+        enemyBullets.splice(0, enemyBullets.length - MAX_ENEMY_BULLETS);
+      }
+    }
+
+    /**
+     * ボスの更新 (§16/§21)。
+     *  1. BOSS_STOP_Y まで降下 → 到達後は左右往復(sin)。
+     *  2. 弾幕はフェーズ制: HP 50% 以下で攻撃間隔 0.75 倍。
+     *  3. tier 別パターンは fireBossBullets で分岐。tier3 は円形弾を BOSS_RING_INTERVAL ごと。
+     * @param {object} e ボス
+     * @param {number} delta
+     */
+    function updateBoss(e, delta) {
+      if (!e.arrived) {
+        // 降下
+        e.y += BOSS_DESCEND_SPD * delta;
+        if (e.y >= BOSS_STOP_Y) {
+          e.y = BOSS_STOP_Y;
+          e.arrived = true;
+        }
+        return; // 降下中は攻撃しない
+      }
+
+      // 左右往復(sin)。中心 = 画面中央。
+      e.swayT += delta * (Math.PI * 2 / BOSS_SWAY_PERIOD);
+      e.x = CANVAS_LOGIC_WIDTH / 2 + Math.sin(e.swayT) * BOSS_SWAY_AMP;
+
+      // フェーズ制: HP 50% 以下で攻撃間隔短縮
+      const phaseMul = (e.hp <= e.maxHp * 0.5) ? 0.75 : 1.0;
+      const fire = e.baseFire * phaseMul;
+
+      // 通常弾幕
+      e.fireTimer -= delta;
+      if (e.fireTimer <= 0) {
+        fireBossBullets(e);
+        e.fireTimer += fire;
+        if (e.fireTimer <= 0) e.fireTimer = fire;
+      }
+
+      // tier3: 周期的な円形弾(12方向)
+      if (e.tier >= 3) {
+        e.ringTimer -= delta;
+        if (e.ringTimer <= 0) {
+          fireBossRing(e);
+          e.ringTimer += BOSS_RING_INTERVAL;
+          if (e.ringTimer <= 0) e.ringTimer = BOSS_RING_INTERVAL;
+        }
+      }
+    }
+
+    /**
+     * ボスの通常弾幕を1セット発射する (§21)。
+     *  tier1: 3-way(下方向)
+     *  tier2: 5-way と 狙い撃ち(aimed)単発を交互
+     *  tier3: 5-way と aimed 2連 を交互(円形弾は別途 fireBossRing)
+     * @param {object} e ボス
+     */
+    function fireBossBullets(e) {
+      const sx = e.x, sy = e.y + e.r * 0.4;
+      const down = Math.PI / 2;
+      const aimAngle = Math.atan2(player.y - sy, player.x - sx);
+
+      function shoot(angle) {
+        enemyBullets.push({
+          x: sx, y: sy,
+          vx: Math.cos(angle) * ENEMY_BULLET_SPEED,
+          vy: Math.sin(angle) * ENEMY_BULLET_SPEED,
+          r: ENEMY_BULLET_RADIUS
+        });
+      }
+      function nway(n, spreadDeg) {
+        const spread = spreadDeg * Math.PI / 180;
+        for (let i = 0; i < n; i++) {
+          const a = down + (i - (n - 1) / 2) * (spread / (n - 1 || 1));
+          shoot(a);
+        }
+      }
+
+      if (e.tier === 1) {
+        nway(3, 50);
+      } else if (e.tier === 2) {
+        if (e.aimToggle) {
+          shoot(aimAngle);              // 狙い撃ち単発
+        } else {
+          nway(5, 80);                  // 5-way
+        }
+        e.aimToggle = !e.aimToggle;
+      } else { // tier3
+        if (e.aimToggle) {
+          shoot(aimAngle);              // aimed 2連
+          shoot(aimAngle);
+        } else {
+          nway(5, 80);
+        }
+        e.aimToggle = !e.aimToggle;
+      }
+
+      if (enemyBullets.length > MAX_ENEMY_BULLETS) {
+        enemyBullets.splice(0, enemyBullets.length - MAX_ENEMY_BULLETS);
+      }
+    }
+
+    /**
+     * tier3 ボスの円形弾(BOSS_RING_COUNT 方向に等間隔)。
+     * @param {object} e ボス
+     */
+    function fireBossRing(e) {
+      const sx = e.x, sy = e.y;
+      for (let i = 0; i < BOSS_RING_COUNT; i++) {
+        const a = (Math.PI * 2 / BOSS_RING_COUNT) * i;
+        enemyBullets.push({
+          x: sx, y: sy,
+          vx: Math.cos(a) * ENEMY_BULLET_SPEED * 0.8,
+          vy: Math.sin(a) * ENEMY_BULLET_SPEED * 0.8,
           r: ENEMY_BULLET_RADIUS
         });
       }
@@ -1631,33 +1964,6 @@
       }
     }
 
-    /**
-     * テスト用スポーン(Phase 4 のウェーブ制がまだないため暫定)。
-     * 2秒ごとに small、8秒ごとに medium、20秒ごとに large を1体。x はランダム。
-     * TODO: Phase 4 でウェーブテーブルへ置換する。
-     */
-    function updateTestSpawns(delta) {
-      const patterns = ['straight', 'sway', 'zigzag'];
-      const randX = () => rand(40, CANVAS_LOGIC_WIDTH - 40);
-      const randPattern = () => patterns[Math.floor(Math.random() * patterns.length)];
-
-      _spawnTimers.small -= delta;
-      if (_spawnTimers.small <= 0) {
-        spawnEnemy('small', randX(), randPattern());
-        _spawnTimers.small += 2.0;
-      }
-      _spawnTimers.medium -= delta;
-      if (_spawnTimers.medium <= 0) {
-        spawnEnemy('medium', randX(), randPattern());
-        _spawnTimers.medium += 8.0;
-      }
-      _spawnTimers.large -= delta;
-      if (_spawnTimers.large <= 0) {
-        spawnEnemy('large', randX(), randPattern());
-        _spawnTimers.large += 20.0;
-      }
-    }
-
     // ===== 衝突判定(すべて円判定。距離² で平方根回避) =====
 
     /**
@@ -1779,7 +2085,47 @@
       drawEnemyBullets(ctx);
       drawPlayer(ctx);
       drawEffects(ctx);
+      drawBossHpBar(ctx);      // §21: ボス HP バーを画面上部に
       drawFloatTexts(ctx);     // §18: レベルアップ表示は最前面に
+    }
+
+    /**
+     * ボスの HP バーを画面上部に描く (§21)。太め・赤。
+     * 画面上に複数ボスは想定しないが、最初のボスを対象にする。
+     */
+    function drawBossHpBar(ctx) {
+      let boss = null;
+      for (let i = 0; i < enemies.length; i++) {
+        if (enemies[i].isBoss) { boss = enemies[i]; break; }
+      }
+      if (!boss) return;
+
+      const margin = 14;
+      const w = CANVAS_LOGIC_WIDTH - margin * 2;
+      const h = 10;
+      const x = margin;
+      const y = 8;
+      const ratio = Math.max(0, boss.hp / boss.maxHp);
+
+      // 背景
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(x - 2, y - 2, w + 4, h + 4);
+      // 残量(50%以下はフェーズ移行を示す濃い赤)
+      ctx.fillStyle = ratio <= 0.5 ? '#ff3030' : '#ff5a5a';
+      ctx.fillRect(x, y, w * ratio, h);
+      // 枠
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(x, y, w, h);
+
+      // ラベル
+      ctx.save();
+      ctx.font = '700 11px -apple-system, "Hiragino Sans", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'bottom';
+      ctx.fillStyle = '#ffd0d0';
+      ctx.fillText('BOSS', x, y - 2);
+      ctx.restore();
     }
 
     /**
@@ -1822,7 +2168,8 @@
         ctx.lineWidth = 4;
         ctx.strokeStyle = 'rgba(0,0,0,0.75)';
         ctx.strokeText(ft.label, CANVAS_LOGIC_WIDTH / 2, y);
-        ctx.fillStyle = '#ffe88a';
+        // ボス予告は赤、それ以外は金色
+        ctx.fillStyle = (ft.kind === 'wave' && /BOSS/.test(ft.label)) ? '#ff7070' : '#ffe88a';
         ctx.fillText(ft.label, CANVAS_LOGIC_WIDTH / 2, y);
       }
       ctx.restore();
@@ -2012,27 +2359,116 @@
       }
     }
 
-    // ===== [F] ウェーブ・敵生成 =====
-    // (Phase 4 で本実装。Phase 2 はテスト用の仮スポーンのみ)
+    // ===== [F] ウェーブ・敵生成 (Phase 4) =====
 
     /**
-     * 指定ウェーブを開始する。
-     * TODO: Phase 4 — 30波テーブルに基づく敵編成・ボス出現へ置換する。
-     * Phase 2 ではテスト用スポーンのタイマーを初期化するだけ。
-     * 実際のスポーン(2秒ごと small / 8秒ごと medium / 20秒ごと large)は
-     * deltaTime ベースで updateTestSpawns() が行う(setInterval を使わない=タイマーリーク防止)。
+     * 指定ウェーブを開始する (§10/§21)。
+     *  - getWaveConfig(waveNo) でスポーン予約を取得し、t 昇順でキューに積む。
+     *  - waveState を初期化して進行中(active)にする。
+     *  - 「WAVE n」を 1.2 秒表示(§10)。ボス波は別途「BOSS」も表示。
+     * @param {number} waveNo 1〜30
      */
     function startWave(waveNo) {
-      // TODO: Phase 4 でウェーブテーブル参照へ置換
-      // 最初の small は早めに出す。medium / large は最初の周期後に出す。
-      _spawnTimers = { small: 0.6, medium: 8.0, large: 20.0 };
+      gameState.wave = waveNo;
+      const conf = getWaveConfig(waveNo);
+      // t 昇順に整列してキュー化(getWaveConfig 内で複数 addGroup が混在するため)
+      const queue = conf.spawns.slice().sort((a, b) => a.t - b.t);
+      waveState = {
+        queue: queue,
+        elapsed: 0,
+        isBossWave: conf.isBoss,
+        bossSpawned: false,
+        active: true,
+        nextTimer: 0,
+        pendingNext: 0
+      };
+      // ウェーブ開始表示(§10)。1.2 秒。
+      pushWaveText('WAVE ' + waveNo, 1.2);
+      if (conf.isBoss) {
+        pushWaveText('⚠ BOSS ⚠', 1.6);
+      }
     }
 
     /**
-     * ウェーブクリア判定 (Phase 4 で実装)
+     * ウェーブ進行を 1 フレーム進める。
+     *  - 待機中(!active)はカウントダウンのみ。0 で次ウェーブを startWave。
+     *  - 進行中は elapsed を進め、t <= elapsed の予約を spawn(キューは t 昇順なので先頭から)。
+     *  - 全消化後 checkWaveClear() を呼ぶ。
+     * 既存弾・被弾判定は update() 内の他処理で継続するため、ここでは新規出現のみ扱う。
+     * @param {number} delta
+     */
+    function updateWave(delta) {
+      if (!waveState.active) {
+        // ウェーブ間待機: 次ウェーブ開始までのカウントダウン
+        if (waveState.nextTimer > 0) {
+          waveState.nextTimer -= delta;
+          if (waveState.nextTimer <= 0) {
+            startWave(waveState.pendingNext);
+          }
+        }
+        return;
+      }
+
+      waveState.elapsed += delta;
+
+      // t <= elapsed の予約を出現させる(キューは昇順)
+      const q = waveState.queue;
+      while (q.length > 0 && q[0].t <= waveState.elapsed) {
+        const s = q.shift();
+        spawnEnemy(s.type, s.x, s.pattern);
+        if (s.type === 'boss') waveState.bossSpawned = true;
+      }
+
+      checkWaveClear();
+    }
+
+    /**
+     * ウェーブクリア判定 (§21/§22/§23)。
+     *  クリア条件: スポーンキューが空 かつ 画面上に敵がいない
+     *  (ボス波はボス撃破=enemies が空になることで満たす)。
+     *  - ウェーブ突破ボーナス: waveNo × WAVE_BONUS_PER_WAVE (§23)。
+     *  - wave30 撃破: CLEAR_BONUS を加算し endGame(true)(到達ウェーブ進行度31)。
+     *  - それ以外: 1.5 秒後に次ウェーブへ。gameState.wave は startWave で更新する。
      */
     function checkWaveClear() {
-      // TODO: Phase 4
+      if (!waveState.active) return;
+      // まだ出し切っていない / 画面に敵が残っている
+      if (waveState.queue.length > 0) return;
+      if (enemies.length > 0) return;
+      // ボス波はボスが spawn 済みであることを確認(降下前にクリア判定が誤発火しない保険)
+      if (waveState.isBossWave && !waveState.bossSpawned) return;
+
+      const waveNo = gameState.wave;
+
+      // ウェーブ突破ボーナス (§23: ウェーブ数 × 500)
+      addScore(waveNo * SCORE_TABLE.WAVE_BONUS_PER_WAVE);
+
+      if (waveNo >= 30) {
+        // 30波クリア (§22: 進行度31, §23: クリアボーナス +20,000)
+        addScore(SCORE_TABLE.CLEAR_BONUS);
+        waveState.active = false;
+        endGame(true);
+        return;
+      }
+
+      // 次ウェーブへ移行(1.5 秒待機)
+      waveState.active = false;
+      waveState.pendingNext = waveNo + 1;
+      waveState.nextTimer = 1.5;
+    }
+
+    /**
+     * ウェーブ開始・BOSS 等のアナウンステキストを画面中央に出す。
+     * pushLevelUpText と同じ floatTexts を使うが、専用 dur を指定できる。
+     * @param {string} label
+     * @param {number} dur 表示秒
+     */
+    function pushWaveText(label, dur) {
+      const offset = floatTexts.length * 30;
+      floatTexts.push({ kind: 'wave', label: label, t: 0, dur: dur || 1.2, offset: offset });
+      if (floatTexts.length > MAX_FLOAT_TEXTS) {
+        floatTexts.splice(0, floatTexts.length - MAX_FLOAT_TEXTS);
+      }
     }
 
     // ===== [G] 戦利品・経験値・レベルアップ・強化抽選 =====
