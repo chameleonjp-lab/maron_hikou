@@ -16,7 +16,7 @@ description: 開発計画書のフェーズをOpus/Sonnetサブエージェン�
    - `model`: 計画書のフェーズ表どおり(`sonnet` または `opus`)
    - フェーズは直列実行。複数フェーズを同時に index.html へ触らせない。
 3. プロンプトには必ず以下を含める:
-   - 「まず `/home/user/maron_hikou/docs/SPEC_v0.2.md` の該当セクションと `docs/DEVELOPMENT_PLAN.md` の Phase N を読むこと」
+   - 「まず `docs/game-spec.md`、`docs/SPEC_v0.2.md` の該当セクションと `docs/DEVELOPMENT_PLAN.md` の Phase N を読むこと。ランキング関連なら `docs/ranking-spec.md`、タッチ関連なら `docs/mobile-touch-checklist.md` も読むこと」
    - 対象セクション番号の列挙(計画書のフェーズ説明に記載)
    - 絶対制約: index.html 1ファイル完結 / 外部素材・外部JS・外部CSS禁止 / 永続強化禁止 / 既存コードの構造(セクション [A]〜[J])を壊さない
    - 受け入れ基準(計画書から転記)

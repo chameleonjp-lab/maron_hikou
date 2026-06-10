@@ -110,7 +110,8 @@ CLAUDE.md、仕様書、本計画書、スキル2種の作成とプッシュ。
 
 **受け入れ基準**: §24〜27 どおり。内部スコアが画面に出ない。
 
-**⚠️ ブロッカー**: Supabase の URL と anon キーが必要。既存ゲーム(実験場の他ゲーム)と同じ値を流用する想定。ユーザーから提供されるか、既存ゲームの index.html から確認する。
+**ブロッカー解消済み**: Supabase URL・Publishable key・`submit_score` の引数(`p_display_name`/`p_game_slug`/`p_score`/`p_client_version`)は `docs/ranking-spec.md`(共通テンプレート由来)で確認済み。
+残る要確認: ランキング取得 RPC(`get_best_score_ranking` 等)の引数・戻り値(`rank_no` の有無)。実装前に既存ゲームか Supabase 側で確認する。
 
 ### Phase 6: スマホ最適化・調整 — Sonnet + メイン監査
 
@@ -153,6 +154,9 @@ CLAUDE.md、仕様書、本計画書、スキル2種の作成とプッシュ。
 
 ## 6. 未確定事項(ユーザー確認待ち)
 
-1. **Supabase URL / anon キー / submit_score の正確なシグネチャ**(Phase 5 のブロッカー)
-2. 実験場トップ・詳細ランキングページのリポジトリ所在(Phase 8 は手順書のみ作成)
-3. p_client_version の文字列規約(暫定: `maron_hikou_v1.0.0`)
+1. ~~Supabase URL / キー / submit_score シグネチャ~~ → **解消**(`docs/ranking-spec.md` 参照)
+2. ランキング取得 RPC(`get_best_score_ranking` 等)の引数・戻り値、同率順位用 `rank_no` の有無(要確認)
+3. 実験場の詳細ランキングページが合成スコアを「17波到達 184,500点」へ復元表示できるか(要確認)
+4. 実験場トップ・詳細ランキングページのリポジトリ所在(Phase 8 は手順書のみ作成)
+5. client_version の文字列規約(暫定: `v1`、共通テンプレートの例に準拠)
+6. display_order の確定値(仮: 12)
