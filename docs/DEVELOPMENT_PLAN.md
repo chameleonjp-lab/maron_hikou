@@ -1,5 +1,8 @@
 # マロン飛行 開発計画書 v1.0
 
+> **進捗(2026-06-11)**: Phase 0〜7 完了(index.html 実装済み・最終仕様監査 33/33 合格)。
+> 残り = Phase 8(公開・実験場登録。リポジトリ外の手作業)と実機確認(`docs/known-issues.md` 参照)。
+
 対象仕様: `docs/SPEC_v0.2.md`
 開発ブランチ: `claude/optimistic-cori-5e5735`
 成果物: `index.html` 1ファイル(HTML / CSS / JS 完結、外部素材なし)
