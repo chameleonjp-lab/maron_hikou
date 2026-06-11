@@ -915,6 +915,12 @@
     const LAB_URL = 'https://chameleonjp.codeberg.page/chameleonjp_lab/';
     const CANVAS_LOGIC_WIDTH = 400;
     const PLAYER_NAME_KEY = 'maron_hikou_player_name';
+    const BEST_SCORE_KEY  = 'maron_hikou_best_score'; // 自己ベスト(ranking_score)。永続強化ではなく記録のみ
+
+    // Supabase 接続情報(docs/ranking-spec.md 共通仕様。Publishable key は公開可)
+    const SUPABASE_URL = 'https://mlpnjgezrnhdxsxolyzj.supabase.co';
+    const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_drzcy0v97knU6FgjqSgBHw_0A9XPdFM';
+    const RANKING_LIMIT = 10;   // 結果画面下部ランキングの表示件数 (§26)
 
     // スコア点数表 (§23)
     const SCORE_TABLE = {
@@ -2703,37 +2709,193 @@
       document.getElementById('result-kills').textContent  = gameState.kills + '機';
       document.getElementById('result-loots').textContent  = gameState.lootCount + '個';
 
-      // 送信状態(Phase 5 で更新)
+      // 送信状態 (§27/§28)
       document.getElementById('submit-status').textContent =
-        gameState.isRetired ? 'リタイアのため送信なし' : '---';
+        gameState.isRetired ? 'リタイアのため送信なし' : '';
 
-      // ベスト更新
-      document.getElementById('result-best-update').textContent = '';
-
-      // ランキング欄(Phase 5 で実装)
-      document.getElementById('ranking-list').innerHTML =
-        '<div class="ranking-loading">読み込み中...</div>';
+      // ベスト更新 (§26)。リタイアは記録対象外(送信もしないため)
+      const bestEl = document.getElementById('result-best-update');
+      bestEl.textContent = '';
+      if (!gameState.isRetired) {
+        const rs = buildRankingScore();
+        const prevBest = parseInt(localStorage.getItem(BEST_SCORE_KEY) || '0', 10) || 0;
+        if (rs > prevBest) {
+          localStorage.setItem(BEST_SCORE_KEY, String(rs));
+          if (prevBest > 0) bestEl.textContent = '🏅 最高到達更新!';
+        }
+      }
 
       showScreen('result');
 
-      // Phase 5: submitScore(); fetchRanking();
+      // ランキング送信(自動・1回のみ)と上位10件の取得 (§26/§27)
+      submitScore();
+      fetchRanking();
     }
 
     // ===== [I] Supabase 連携 =====
-    // (Phase 5 で実装。以下はプレースホルダ)
 
     /**
-     * ランキングスコアを Supabase へ送信 (Phase 5 で実装)
+     * Supabase RPC を呼ぶ(PostgREST)。10秒でタイムアウト。
+     * @param {string} fnName RPC 名
+     * @param {object} body 引数
+     * @returns {Promise<any>} レスポンス JSON(空ボディは null)
      */
-    async function submitScore() {
-      // TODO: Phase 5
+    async function supabaseRpc(fnName, body) {
+      const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      const timer = ctrl ? setTimeout(() => ctrl.abort(), 10000) : null;
+      try {
+        const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + fnName, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_PUBLISHABLE_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_PUBLISHABLE_KEY,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(body),
+          signal: ctrl ? ctrl.signal : undefined
+        });
+        if (!res.ok) throw new Error('Supabase RPC failed: ' + res.status);
+        const text = await res.text();
+        return text ? JSON.parse(text) : null;
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
     }
 
     /**
-     * ランキング上位10件を取得して表示 (Phase 5 で実装)
+     * ランキングスコアを Supabase へ自動送信する (§27/§31)。
+     *  - リタイア時は送信しない (§28)。
+     *  - scoreSent フラグで二重送信を防止(結果画面の再表示・連打でも1回だけ)。
+     *  - 送信値は合成 ranking_score(画面には出さない)。
+     */
+    async function submitScore() {
+      if (gameState.isRetired) return;
+      if (gameState.scoreSent) return;
+      gameState.scoreSent = true;   // 先にフラグを立てて再入・連打を防ぐ
+
+      const statusEl = document.getElementById('submit-status');
+      const displayName = (localStorage.getItem(PLAYER_NAME_KEY) || '').trim();
+      if (!displayName) {
+        // 名前入力必須のため通常起こらない(保険)
+        statusEl.textContent = 'ランキング送信失敗(名前未設定)';
+        return;
+      }
+
+      statusEl.textContent = 'ランキング送信中...';
+      try {
+        await supabaseRpc('submit_score', {
+          p_display_name: displayName,
+          p_game_slug: GAME_SLUG,
+          p_score: buildRankingScore(),
+          p_client_version: CLIENT_VERSION
+        });
+        statusEl.textContent = 'ランキング送信成功';
+      } catch (err) {
+        // 失敗してもゲーム結果は見える (§27)。再送はしない(二重送信防止優先)
+        statusEl.textContent = 'ランキング送信失敗';
+      }
+    }
+
+    /**
+     * ランキング上位10件を取得して結果画面下部に表示する (§24/§26)。
+     * 取得 RPC のシグネチャは環境差に備えて防御的に呼ぶ:
+     *  1. { p_game_slug, p_limit } → 失敗したら 2. { p_game_slug } のみ。
      */
     async function fetchRanking() {
-      // TODO: Phase 5
+      const listEl = document.getElementById('ranking-list');
+      listEl.innerHTML = '<div class="ranking-loading">読み込み中...</div>';
+      try {
+        let rows;
+        try {
+          rows = await supabaseRpc('get_best_score_ranking', { p_game_slug: GAME_SLUG, p_limit: RANKING_LIMIT });
+        } catch (e) {
+          rows = await supabaseRpc('get_best_score_ranking', { p_game_slug: GAME_SLUG });
+        }
+        renderRanking(Array.isArray(rows) ? rows : []);
+      } catch (err) {
+        listEl.textContent = '';
+        const div = document.createElement('div');
+        div.className = 'ranking-loading';
+        div.textContent = 'ランキングを取得できませんでした';
+        listEl.appendChild(div);
+      }
+    }
+
+    /**
+     * ランキング行を描画する (§24〜§26)。
+     *  - 内部 ranking_score は表示せず「17波到達 184,500点」形式へ復元する (§31)。
+     *  - 同点は同率順位(1位・1位・3位)。RPC が rank_no を返す場合はそれを優先する (§25)。
+     *  - 表示名は textContent で挿入(他プレイヤー名による HTML 注入を防ぐ)。
+     * @param {Array<object>} rows RPC の戻り値
+     */
+    function renderRanking(rows) {
+      const listEl = document.getElementById('ranking-list');
+      listEl.textContent = '';
+
+      const myName = (localStorage.getItem(PLAYER_NAME_KEY) || '').trim();
+
+      // 戻り値のキー名の揺れを許容して正規化
+      const items = rows.map(function (r) {
+        const name = r.display_name != null ? r.display_name
+                   : r.player_name != null ? r.player_name
+                   : r.name != null ? r.name : '???';
+        const rsRaw = r.score != null ? r.score
+                    : r.best_score != null ? r.best_score
+                    : r.ranking_score != null ? r.ranking_score : NaN;
+        const rs = Number(rsRaw);
+        const rankNo = r.rank_no != null ? Number(r.rank_no) : null;
+        return { name: String(name), rs: rs, rankNo: rankNo };
+      }).filter(function (it) { return Number.isFinite(it.rs); });
+
+      // 大きいほど上位 (score_order=desc)。RPC が整列済みでも保険で並べ直す
+      items.sort(function (a, b) { return b.rs - a.rs; });
+      const top = items.slice(0, RANKING_LIMIT);
+
+      if (top.length === 0) {
+        const div = document.createElement('div');
+        div.className = 'ranking-loading';
+        div.textContent = 'まだ記録がありません';
+        listEl.appendChild(div);
+        return;
+      }
+
+      let prevRs = null;
+      let prevRank = 0;
+      top.forEach(function (it, i) {
+        // 同率順位: 同じ ranking_score は同順位、次は人数分飛ぶ (§25)
+        let rank;
+        if (it.rankNo != null) {
+          rank = it.rankNo;
+        } else if (it.rs === prevRs) {
+          rank = prevRank;
+        } else {
+          rank = i + 1;
+        }
+        prevRs = it.rs;
+        prevRank = rank;
+
+        const parsed = parseRankingScore(it.rs);
+
+        const item = document.createElement('div');
+        item.className = 'ranking-item' + (it.name === myName ? ' is-you' : '');
+
+        const rankEl = document.createElement('span');
+        rankEl.className = 'rank-no' + (rank === 1 ? ' gold' : rank === 2 ? ' silver' : rank === 3 ? ' bronze' : '');
+        rankEl.textContent = rank + '位';
+
+        const nameEl = document.createElement('span');
+        nameEl.className = 'rank-name';
+        nameEl.textContent = it.name;
+
+        const resultEl = document.createElement('span');
+        resultEl.className = 'rank-result';
+        resultEl.textContent = progressToLabel(parsed.progress) + ' ' + formatScore(parsed.displayScore) + '点';
+
+        item.appendChild(rankEl);
+        item.appendChild(nameEl);
+        item.appendChild(resultEl);
+        listEl.appendChild(item);
+      });
     }
 
     // ===== [J] シェア =====
