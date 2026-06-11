@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <title>マロン飛行</title>
@@ -195,7 +195,6 @@
       align-items: center;
       justify-content: center;
       padding: 20px;
-      touch-action: none;
     }
     .modal-overlay.open {
       display: flex;
@@ -210,6 +209,7 @@
       max-height: 80vh;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
     }
     .modal-title {
       font-size: 1.15rem;
@@ -368,6 +368,8 @@
       max-width: 430px;
       width: 100%;
       margin: 0 auto;
+      /* ホームインジケーター領域にプレイ領域が潜らないようにする */
+      padding-bottom: env(safe-area-inset-bottom, 0px);
     }
 
     /* ===== HUD 上段 ===== */
@@ -404,7 +406,7 @@
     }
 
     .btn-retire {
-      min-height: 36px;
+      min-height: 44px;
       min-width: 64px;
       width: auto;
       padding: 0 12px;
@@ -459,7 +461,8 @@
     }
 
     .hud-hp {
-      font-size: 0.82rem;
+      font-size: 0.72rem;
+      letter-spacing: -1px;
       color: #ff8080;
       white-space: nowrap;
     }
@@ -957,7 +960,7 @@
     ];
 
     // 経験値テーブル (§20, Lv.1→12)
-    const EXP_TABLE = [0, 5, 12, 22, 35, 51, 70, 92, 118, 148, 182, 220];
+    const EXP_TABLE = [0, 5, 12, 22, 35, 51, 72, 98, 130, 168, 212, 265];
     // EXP_TABLE[i] = Lv.(i+1) に上がるために必要な累積経験値
 
     const MAX_LEVEL = 12;
@@ -1055,8 +1058,8 @@
       10: { hp: 110, tier: 1, fire: 1.15 },
       15: { hp: 170, tier: 2, fire: 1.05 },
       20: { hp: 240, tier: 2, fire: 0.95 },
-      25: { hp: 320, tier: 3, fire: 0.90 },
-      30: { hp: 420, tier: 3, fire: 0.85 }
+      25: { hp: 290, tier: 3, fire: 0.90 },
+      30: { hp: 340, tier: 3, fire: 0.85 }
     };
 
     // ボスが降りてきて停止する y(論理)と左右往復の振幅・周期
@@ -1210,9 +1213,16 @@
     }
     document.addEventListener('touchmove', preventTouchMove, { passive: false });
 
-    // ダブルタップ拡大抑止(入力欄はカーソル操作を妨げないため除外)
+    // ゲーム関連画面(ゲーム・カウントダウン)が表示中かどうか
+    function isGameplayScreenActive() {
+      return document.getElementById('screen-game').classList.contains('active') ||
+             document.getElementById('screen-countdown').classList.contains('active');
+    }
+
+    // ダブルタップ拡大抑止(ゲーム中のみ。結果画面等のスクロール・連打操作を妨げない)
     let lastTap = 0;
     document.addEventListener('touchend', function(e) {
+      if (!isGameplayScreenActive()) return;
       if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
       const now = Date.now();
       if (now - lastTap < 300 && e.cancelable) {
@@ -1221,16 +1231,13 @@
       lastTap = now;
     }, { passive: false });
 
-    // ピンチ・2本指ジェスチャー抑止
-    document.addEventListener('gesturestart', function(e) {
-      e.preventDefault();
-    }, { passive: false });
-    document.addEventListener('gesturechange', function(e) {
-      e.preventDefault();
-    }, { passive: false });
-    document.addEventListener('gestureend', function(e) {
-      e.preventDefault();
-    }, { passive: false });
+    // ピンチ・2本指ジェスチャー抑止(ゲーム中のみ。§12)
+    function preventGesture(e) {
+      if (isGameplayScreenActive()) e.preventDefault();
+    }
+    document.addEventListener('gesturestart', preventGesture, { passive: false });
+    document.addEventListener('gesturechange', preventGesture, { passive: false });
+    document.addEventListener('gestureend', preventGesture, { passive: false });
 
     // --- ポインタイベント処理(Phase 2) ---
     // canvas 上の clientX/Y を論理座標へ変換する。
@@ -1432,12 +1439,8 @@
     function startGame() {
       lastTimestamp = 0;
       if (animFrameId) cancelAnimationFrame(animFrameId);
-      // 開発用フック: URL ハッシュ #w=12 で開始ウェーブを変更(1〜30。リリースでも実害なし)
-      let startWaveNo = 1;
-      const m = /[#&]w=(\d+)/.exec(location.hash || '');
-      if (m) startWaveNo = Math.max(1, Math.min(30, parseInt(m[1], 10)));
-      // 最初のウェーブを開始(gameState.wave は startWave 内で設定される)
-      startWave(startWaveNo);
+      // 常に WAVE 1 から開始する(途中ウェーブ開始を許すとランキングの公平性が壊れる)
+      startWave(1);
       animFrameId = requestAnimationFrame(gameLoop);
     }
 
@@ -1791,8 +1794,10 @@
         e.aimToggle = !e.aimToggle;
       } else { // tier3
         if (e.aimToggle) {
-          shoot(aimAngle);              // aimed 2連
-          shoot(aimAngle);
+          // aimed 2連(角度差±6°で視認できる2発にする)
+          const d6 = 6 * Math.PI / 180;
+          shoot(aimAngle - d6);
+          shoot(aimAngle + d6);
         } else {
           nway(5, 80);
         }
@@ -2547,7 +2552,7 @@
           break;
         case 'hitreduce':
           // 当たり判定縮小(×0.78、小数第1位で丸め)
-          player.hitRadius = Math.round(player.hitRadius * 0.78 * 10) / 10;
+          player.hitRadius = Math.round(player.hitRadius * 0.74 * 10) / 10;
           break;
       }
     }
@@ -2988,21 +2993,22 @@
      * 論理座標系(幅 400 固定)のスケールを確定する。
      */
     function resizeCanvas() {
-      const gameEl   = document.getElementById('screen-game');
-      const wrapper  = gameEl.querySelector('.game-wrapper');
-      const canvas   = document.getElementById('game-canvas');
-      const hudTop   = gameEl.querySelector('.hud-top');
-      const hudBot   = gameEl.querySelector('.hud-bottom');
-      if (!canvas || !wrapper) return;
+      const canvas = document.getElementById('game-canvas');
+      if (!canvas) return;
 
-      const dpr        = window.devicePixelRatio || 1;
-      const wrapW      = Math.min(window.innerWidth, 430);
-      const hudH       = (hudTop ? hudTop.offsetHeight : 44) + (hudBot ? hudBot.offsetHeight : 36);
-      const canvasH    = Math.max(120, window.innerHeight - hudH);
+      const dpr = window.devicePixelRatio || 1;
 
-      // CSS サイズ
-      canvas.style.width  = wrapW + 'px';
-      canvas.style.height = canvasH + 'px';
+      // CSS レイアウト(flex + safe-area パディング)で確定した実寸を測る。
+      // getBoundingClientRect は同期レイアウトを強制するため、
+      // showScreen('game') 直後でも正しい値が取れる。
+      const rect = canvas.getBoundingClientRect();
+      let wrapW   = rect.width;
+      let canvasH = rect.height;
+      // 非表示・レイアウト未確定時のフォールバック
+      if (wrapW < 50 || canvasH < 120) {
+        wrapW   = Math.min(window.innerWidth, 430);
+        canvasH = Math.max(120, window.innerHeight - 80);
+      }
 
       // バッファサイズ(DPR対応)
       canvas.width  = Math.round(wrapW  * dpr);
