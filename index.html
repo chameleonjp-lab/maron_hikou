@@ -986,7 +986,10 @@
     const ENEMY_BULLET_RADIUS = 5;     // 敵弾の当たり半径
 
     // 同時表示上限の保険 (§35)
-    const MAX_ENEMY_BULLETS = 120;
+    // 敵数2倍 + 中型/大型の高頻度狙撃で同時弾数が増えるため 120→160 に引き上げ。
+    // 概算: 後半波で large(3-way)が ~8体 × ~1発/秒 + medium(単発)~8体 + ボス弾幕で
+    //       瞬間的に 120 を超えうる。古い弾から間引かれて狙撃が消える違和感を避ける。
+    const MAX_ENEMY_BULLETS = 160;
     const MAX_PLAYER_BULLETS = 60;
     const MAX_EFFECTS        = 30;
     const MAX_LOOTS          = 40;   // 戦利品の同時表示上限(古いものから捨てる)
@@ -1004,11 +1007,13 @@
     //  drop:  ドロップ確率(0〜1)。
     //  table: 抽選テーブル(p の合計は 1)。type がドロップ戦利品種。
     //  count: ボスのように複数個落とす場合の個数(省略時 1)。
+    // 敵数を2倍にした分、ドロップ率を半減して期待ドロップ数・期待経験値を現状維持する
+    // (small 0.35→0.175 / medium 0.70→0.35 / large 1.0→0.5)。boss は 1.0×3個のまま。
     const LOOT_DROP_TABLE = {
-      small:  { drop: 0.35, table: [{ p: 1.0, type: 'normal' }] },
-      medium: { drop: 0.70, table: [{ p: 0.7, type: 'normal' }, { p: 0.3, type: 'large' }] },
-      large:  { drop: 1.0,  table: [{ p: 1.0, type: 'large' }] },
-      boss:   { drop: 1.0,  table: [{ p: 1.0, type: 'boss' }], count: 3 }
+      small:  { drop: 0.175, table: [{ p: 1.0, type: 'normal' }] },
+      medium: { drop: 0.35,  table: [{ p: 0.7, type: 'normal' }, { p: 0.3, type: 'large' }] },
+      large:  { drop: 0.5,   table: [{ p: 1.0, type: 'large' }] },
+      boss:   { drop: 1.0,   table: [{ p: 1.0, type: 'boss' }], count: 3 }
     };
 
     const LOOT_FALL_SPEED   = 55;   // 戦利品の落下速度 px/s(等速・ゆっくり)
@@ -1034,11 +1039,11 @@
       },
       medium: {
         hp: 4,   speedRange: [55, 75],  radius: 20, score: SCORE_TABLE.MEDIUM_ENEMY,
-        emoji: '✈️', color: '#FFD24A', fireInterval: 2.2, shots: 1
+        emoji: '✈️', color: '#FFD24A', fireInterval: 1.3, shots: 1
       },
       large: {
         hp: 10,  speedRange: [35, 45],  radius: 28, score: SCORE_TABLE.LARGE_ENEMY,
-        emoji: '🛫', color: '#FF6A5A', fireInterval: 2.8, shots: 3
+        emoji: '🛫', color: '#FF6A5A', fireInterval: 1.0, shots: 3
       },
       boss: {
         hp: 60,  speedRange: [0, 0],    radius: 44, score: SCORE_TABLE.BOSS,
@@ -1123,65 +1128,68 @@
       if (isBoss) {
         // ボス波: ボス + 護衛雑魚。ボスは t=0 で出す(降下演出は update 側)。
         spawns.push({ type: 'boss', x: W / 2, pattern: 'boss', t: 0 });
+        // 護衛雑魚は count 2倍 / interval 半分(ボス自体は1体のまま)
         if (waveNo === 5) {
-          addGroup('small', 4, 1.0, 1.6, ['straight', 'sway']);
+          addGroup('small', 8, 1.0, 0.8, ['straight', 'sway']);            // 4→8体
         } else if (waveNo === 10) {
-          addGroup('small', 6, 1.0, 1.4, ['straight', 'sway', 'zigzag']);
+          addGroup('small', 12, 1.0, 0.7, ['straight', 'sway', 'zigzag']); // 6→12体
         } else if (waveNo === 15) {
-          addGroup('medium', 3, 1.2, 2.2, ['straight', 'sway']);
+          addGroup('medium', 6, 1.2, 1.1, ['straight', 'sway']);          // 3→6体
         } else if (waveNo === 20) {
-          addGroup('medium', 3, 1.2, 2.0, ['sway', 'zigzag']);
+          addGroup('medium', 6, 1.2, 1.0, ['sway', 'zigzag']);            // 3→6体
         } else if (waveNo === 25) {
-          addGroup('large', 2, 1.5, 3.0, ['straight', 'sway']);
-        } else { // 30: 最終ボス + 護衛 medium 2
-          addGroup('medium', 2, 1.2, 2.2, ['sway', 'zigzag']);
+          addGroup('large', 4, 1.5, 1.5, ['straight', 'sway']);           // 2→4体
+        } else { // 30: 最終ボス + 護衛 medium 4(2→4体)
+          addGroup('medium', 4, 1.2, 1.1, ['sway', 'zigzag']);
         }
         return { isBoss: true, spawns: spawns };
       }
 
       // --- 通常波: 区間別の編成 (§21) ---
+      // 密度2倍: 各 addGroup の count を2倍・interval を半分にする
+      // (ウェーブ所要時間は維持したまま敵密度のみ倍増)。体数コメントも実態へ更新。
       if (waveNo <= 4) {
-        // 1〜4波: small のみ 6〜10体、直進中心。wave2 から sway 混在。
-        const count = 6 + (waveNo - 1);                 // 6,7,8,9
+        // 1〜4波: small のみ 12〜18体、直進中心。wave2 から sway 混在。
+        const count = (6 + (waveNo - 1)) * 2;            // 12,14,16,18
         const pats = waveNo >= 2 ? ['straight', 'straight', 'sway'] : ['straight'];
-        addGroup('small', count, 0.6, 1.5, pats);
+        addGroup('small', count, 0.6, 0.75, pats);
       } else if (waveNo <= 9) {
-        // 6〜9波: small 8〜12 + medium 1〜3。sway/zigzag 混在。
-        const sCount = 8 + (waveNo - 6);                // 8,9,10,11
-        const mCount = 1 + Math.floor((waveNo - 6) / 1.5); // 1,1,2,3
-        addGroup('small', sCount, 0.6, 1.3, ['straight', 'sway', 'zigzag']);
-        addGroup('medium', mCount, 2.0, 3.0, ['straight', 'sway']);
+        // 6〜9波: small 16〜22 + medium 2〜6。sway/zigzag 混在。
+        const sCount = (8 + (waveNo - 6)) * 2;                // 16,18,20,22
+        const mCount = (1 + Math.floor((waveNo - 6) / 1.5)) * 2; // 2,2,4,6
+        addGroup('small', sCount, 0.6, 0.65, ['straight', 'sway', 'zigzag']);
+        addGroup('medium', mCount, 2.0, 1.5, ['straight', 'sway']);
       } else if (waveNo <= 14) {
-        // 11〜14波: small 10〜14 + medium 3〜5 + large 1〜2。
-        const sCount = 10 + (waveNo - 11) + 1;          // 11,12,13,14
-        const mCount = 3 + Math.floor((waveNo - 11) / 2); // 3,3,4,4
-        const lCount = 1 + Math.floor((waveNo - 11) / 3); // 1,1,1,2
-        addGroup('small', sCount, 0.5, 1.1, ['straight', 'sway', 'zigzag']);
-        addGroup('medium', mCount, 1.5, 2.2, ['sway', 'zigzag']);
-        addGroup('large', lCount, 3.0, 4.0, ['straight', 'sway']);
+        // 11〜14波: small 22〜28 + medium 6〜8 + large 2〜4。
+        const sCount = (10 + (waveNo - 11) + 1) * 2;     // 22,24,26,28
+        const mCount = (3 + Math.floor((waveNo - 11) / 2)) * 2; // 6,6,8,8
+        const lCount = (1 + Math.floor((waveNo - 11) / 3)) * 2; // 2,2,2,4
+        addGroup('small', sCount, 0.5, 0.55, ['straight', 'sway', 'zigzag']);
+        addGroup('medium', mCount, 1.5, 1.1, ['sway', 'zigzag']);
+        addGroup('large', lCount, 3.0, 2.0, ['straight', 'sway']);
       } else if (waveNo <= 19) {
-        // 16〜19波: medium 5〜7 + large 2〜3 + small 編隊。
-        const mCount = 5 + Math.floor((waveNo - 16) / 1.5); // 5,5,6,7
-        const lCount = 2 + Math.floor((waveNo - 16) / 3);   // 2,2,2,3
-        addGroup('small', 9, 0.5, 0.9, ['straight', 'sway'], true); // 編隊
-        addGroup('medium', mCount, 1.4, 1.8, ['sway', 'zigzag']);
-        addGroup('large', lCount, 2.5, 3.2, ['straight', 'sway']);
+        // 16〜19波: medium 10〜14 + large 4〜6 + small 編隊 18。
+        const mCount = (5 + Math.floor((waveNo - 16) / 1.5)) * 2; // 10,10,12,14
+        const lCount = (2 + Math.floor((waveNo - 16) / 3)) * 2;   // 4,4,4,6
+        addGroup('small', 18, 0.5, 0.45, ['straight', 'sway'], true); // 編隊 9→18
+        addGroup('medium', mCount, 1.4, 0.9, ['sway', 'zigzag']);
+        addGroup('large', lCount, 2.5, 1.6, ['straight', 'sway']);
       } else if (waveNo <= 24) {
         // 21〜24波: 全種増量。敵弾密度上昇(fireInterval ×0.85 は spawn 時に適用)。
-        const sCount = 12 + (waveNo - 21);              // 12,13,14,15
-        const mCount = 5 + Math.floor((waveNo - 21) / 1.2); // 5,5,6,7
-        const lCount = 2 + Math.floor((waveNo - 21) / 2);   // 2,2,3,3
-        addGroup('small', sCount, 0.4, 0.85, ['straight', 'sway', 'zigzag'], true);
-        addGroup('medium', mCount, 1.2, 1.6, ['sway', 'zigzag']);
-        addGroup('large', lCount, 2.2, 2.8, ['sway', 'zigzag']);
+        const sCount = (12 + (waveNo - 21)) * 2;              // 24,26,28,30
+        const mCount = (5 + Math.floor((waveNo - 21) / 1.2)) * 2; // 10,10,12,14
+        const lCount = (2 + Math.floor((waveNo - 21) / 2)) * 2;   // 4,4,6,6
+        addGroup('small', sCount, 0.4, 0.425, ['straight', 'sway', 'zigzag'], true);
+        addGroup('medium', mCount, 1.2, 0.8, ['sway', 'zigzag']);
+        addGroup('large', lCount, 2.2, 1.4, ['sway', 'zigzag']);
       } else {
-        // 26〜29波: 高密度最終区間(small 14〜18 + medium 6〜8 + large 3〜4)。
-        const sCount = 14 + Math.floor((waveNo - 26) * 1.3); // 14,15,16,17
-        const mCount = 6 + Math.floor((waveNo - 26) / 1.5);  // 6,6,7,8
-        const lCount = 3 + Math.floor((waveNo - 26) / 3);    // 3,3,3,4
-        addGroup('small', sCount, 0.3, 0.7, ['straight', 'sway', 'zigzag'], true);
-        addGroup('medium', mCount, 1.0, 1.3, ['sway', 'zigzag']);
-        addGroup('large', lCount, 2.0, 2.4, ['sway', 'zigzag']);
+        // 26〜29波: 高密度最終区間(small 28〜36 + medium 12〜16 + large 6〜8)。
+        const sCount = (14 + Math.floor((waveNo - 26) * 1.3)) * 2; // 28,30,32,34
+        const mCount = (6 + Math.floor((waveNo - 26) / 1.5)) * 2;  // 12,12,14,16
+        const lCount = (3 + Math.floor((waveNo - 26) / 3)) * 2;    // 6,6,6,8
+        addGroup('small', sCount, 0.3, 0.35, ['straight', 'sway', 'zigzag'], true);
+        addGroup('medium', mCount, 1.0, 0.65, ['sway', 'zigzag']);
+        addGroup('large', lCount, 2.0, 1.2, ['sway', 'zigzag']);
       }
 
       return { isBoss: false, spawns: spawns };
@@ -1599,8 +1607,8 @@
         shots: def.shots,
         // 最初の発砲まで少し猶予(出現直後に撃たない)
         fireTimer: fireInterval > 0 ? rand(fireInterval * 0.5, fireInterval) : 0,
-        // 後半区間(medium/large)はランダムに狙い撃ち敵を混ぜる
-        aimed: (type === 'medium' && waveNo >= 11 && Math.random() < 0.4),
+        // 中型・大型は常にプレイヤー狙い撃ち(medium=単発 / large=狙い中心の3-way)。
+        aimed: (type === 'medium' || type === 'large'),
         age: 0
       });
     }
@@ -2191,12 +2199,14 @@
     let _bgGradH = -1;
     function drawBackground(ctx) {
       if (!_bgGrad || _bgGradH !== LOGIC_H) {
+        // 夕焼けの雰囲気は維持しつつ、彩度・明度を一段落として暗くし、
+        // ゲームオブジェクト(明色シルエット)とのコントラストを確保する。
         _bgGrad = ctx.createLinearGradient(0, 0, 0, LOGIC_H);
-        _bgGrad.addColorStop(0,   '#1a1040');
-        _bgGrad.addColorStop(0.45,'#3a2060');
-        _bgGrad.addColorStop(0.72,'#7a3a5a');
-        _bgGrad.addColorStop(0.9, '#c0603a');
-        _bgGrad.addColorStop(1,   '#e8854a');
+        _bgGrad.addColorStop(0,   '#0c0822');
+        _bgGrad.addColorStop(0.45,'#241338');
+        _bgGrad.addColorStop(0.72,'#4a2438');
+        _bgGrad.addColorStop(0.9, '#7a3c26');
+        _bgGrad.addColorStop(1,   '#9c5530');
         _bgGradH = LOGIC_H;
       }
       ctx.fillStyle = _bgGrad;
@@ -2204,7 +2214,7 @@
 
       // ゆっくり下へ流れる雲(◯を3つ、ループ)。軽量に。
       ctx.save();
-      ctx.fillStyle = 'rgba(255,255,255,0.10)';
+      ctx.fillStyle = 'rgba(255,255,255,0.06)';
       const cloudSpan = LOGIC_H + 120;
       for (let i = 0; i < CLOUDS.length; i++) {
         const c = CLOUDS[i];
@@ -2228,7 +2238,11 @@
     function drawEnemies(ctx) {
       for (let i = 0; i < enemies.length; i++) {
         const e = enemies[i];
-        drawEmoji(ctx, e.emoji, e.x, e.y, e.r * 2);
+        // type 別の下向きシルエットを ctx パスで描く(emoji 依存をやめ、種類を一目で区別)
+        if (e.type === 'small')       drawSmallEnemy(ctx, e.x, e.y);
+        else if (e.type === 'medium') drawMediumEnemy(ctx, e.x, e.y);
+        else if (e.type === 'large')  drawLargeEnemy(ctx, e.x, e.y);
+        else if (e.type === 'boss')   drawBossEnemy(ctx, e.x, e.y);
         // 体力バー(2以上の最大HPのみ、減っている時だけ)
         if (e.maxHp > 1 && e.hp < e.maxHp) {
           const w = e.r * 1.8;
@@ -2243,32 +2257,209 @@
       }
     }
 
+    /**
+     * 小型敵(半径14相当): コンパクトな下向きダート。
+     * 明るいライムグリーン + 黒に近い縁取り + 白いアクセント。
+     */
+    function drawSmallEnemy(ctx, x, y) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = '#0a1408';
+      ctx.lineWidth = 2;
+      ctx.fillStyle = '#9cf04a';
+      // 下向きの矢じり(機首=下)+ 小さな主翼
+      ctx.beginPath();
+      ctx.moveTo(0, 14);      // 機首(下)
+      ctx.lineTo(-11, -2);    // 左翼端
+      ctx.lineTo(-4, -3);
+      ctx.lineTo(-3, -11);    // 左尾
+      ctx.lineTo(3, -11);     // 右尾
+      ctx.lineTo(4, -3);
+      ctx.lineTo(11, -2);     // 右翼端
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      // 白いアクセント(中心ライン)
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.beginPath();
+      ctx.moveTo(0, 9);
+      ctx.lineTo(-2, -6);
+      ctx.lineTo(2, -6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    /**
+     * 中型敵(半径20相当): 双発機っぽい幅広シルエット。
+     * 鮮やかなオレンジ + 縁取り。コックピット濃色。
+     */
+    function drawMediumEnemy(ctx, x, y) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = '#2a1400';
+      ctx.lineWidth = 2;
+      ctx.fillStyle = '#ff9a2a';
+      // 幅広の本体(機首=下)
+      ctx.beginPath();
+      ctx.moveTo(0, 20);      // 機首
+      ctx.lineTo(-6, 4);
+      ctx.lineTo(-19, 2);     // 左翼端
+      ctx.lineTo(-16, -6);
+      ctx.lineTo(-5, -4);
+      ctx.lineTo(-6, -15);    // 左尾
+      ctx.lineTo(6, -15);     // 右尾
+      ctx.lineTo(5, -4);
+      ctx.lineTo(16, -6);
+      ctx.lineTo(19, 2);      // 右翼端
+      ctx.lineTo(6, 4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      // 双発エンジン(白アクセント)
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.beginPath(); ctx.arc(-9, -1, 2.4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(9, -1, 2.4, 0, Math.PI * 2); ctx.fill();
+      // コックピット(濃色)
+      ctx.fillStyle = '#3a1c00';
+      ctx.beginPath(); ctx.ellipse(0, 4, 3, 5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+
+    /**
+     * 大型敵(半径28相当): 重爆撃機風の大型シルエット。
+     * 明るい赤 + 縁取り。コックピット濃色。
+     */
+    function drawLargeEnemy(ctx, x, y) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = '#2a0808';
+      ctx.lineWidth = 2;
+      ctx.fillStyle = '#ff5044';
+      // 太く重い胴体 + 後退翼(機首=下)
+      ctx.beginPath();
+      ctx.moveTo(0, 28);      // 機首
+      ctx.lineTo(-8, 10);
+      ctx.lineTo(-27, 4);     // 左翼端
+      ctx.lineTo(-22, -8);
+      ctx.lineTo(-7, -5);
+      ctx.lineTo(-9, -20);    // 左尾
+      ctx.lineTo(9, -20);     // 右尾
+      ctx.lineTo(7, -5);
+      ctx.lineTo(22, -8);
+      ctx.lineTo(27, 4);      // 右翼端
+      ctx.lineTo(8, 10);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      // エンジン4基(白アクセント)
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      [-15, -6, 6, 15].forEach(function (ex) {
+        ctx.beginPath(); ctx.arc(ex, -2, 2.2, 0, Math.PI * 2); ctx.fill();
+      });
+      // コックピット(濃色)
+      ctx.fillStyle = '#330808';
+      ctx.beginPath(); ctx.ellipse(0, 8, 4, 6, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+
+    /**
+     * ボス(半径44相当): 大型の要塞/円盤シルエット。
+     * 鮮やかな紫 + 発光リム。HP バーは drawBossHpBar が別途描く。
+     */
+    function drawBossEnemy(ctx, x, y) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.lineJoin = 'round';
+      // 発光リム
+      ctx.shadowColor = 'rgba(200,120,255,0.9)';
+      ctx.shadowBlur = 14;
+      // 円盤本体
+      ctx.fillStyle = '#b060ff';
+      ctx.strokeStyle = '#2a0a40';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 44, 26, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.stroke();
+      // 下面の砲塔(下向きの突起)
+      ctx.fillStyle = '#7a3cc0';
+      ctx.beginPath();
+      ctx.moveTo(-16, 18);
+      ctx.lineTo(0, 30);
+      ctx.lineTo(16, 18);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      // 中央コア(発光)
+      ctx.fillStyle = '#ffe0ff';
+      ctx.beginPath(); ctx.arc(0, -2, 9, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#c890ff';
+      ctx.beginPath(); ctx.arc(0, -2, 4.5, 0, Math.PI * 2); ctx.fill();
+      // リムのライト(左右)
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      [-30, -18, 18, 30].forEach(function (lx) {
+        ctx.beginPath(); ctx.arc(lx, 2, 2.4, 0, Math.PI * 2); ctx.fill();
+      });
+      ctx.restore();
+    }
+
     function drawPlayerBullets(ctx) {
-      ctx.fillStyle = '#ffe46a';
       for (let i = 0; i < bullets.length; i++) {
         const b = bullets[i];
-        // 小さな縦長の光
+        // 黄色グロー(外側・やや太く)
         ctx.beginPath();
-        roundRectPath(ctx, b.x - b.r * 0.6, b.y - b.r * 1.6, b.r * 1.2, b.r * 3.2, b.r * 0.6);
+        roundRectPath(ctx, b.x - b.r * 0.95, b.y - b.r * 1.9, b.r * 1.9, b.r * 3.8, b.r * 0.9);
+        ctx.fillStyle = 'rgba(255,210,60,0.55)';
+        ctx.fill();
+        // 白コア(内側・細く明るく)
+        ctx.beginPath();
+        roundRectPath(ctx, b.x - b.r * 0.5, b.y - b.r * 1.6, b.r * 1.0, b.r * 3.2, b.r * 0.5);
+        ctx.fillStyle = '#ffffff';
         ctx.fill();
       }
     }
 
     function drawEnemyBullets(ctx) {
-      ctx.fillStyle = '#ff7a3a';
       for (let i = 0; i < enemyBullets.length; i++) {
         const b = enemyBullets[i];
+        // 明るい赤橙の円 + 白の細い縁取り(1px)で背景から浮かせる
         ctx.beginPath();
         ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        ctx.fillStyle = '#ff5a28';
         ctx.fill();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+        ctx.stroke();
       }
     }
 
     function drawLoots(ctx) {
-      // Phase 3 で本実装。配列にあれば絵文字で描く。
+      // 絵文字 (🔧✨🎁) は仕様 §17 指定のため維持。背後に白っぽい半透明バッジ
+      // (半径15) + 濃い縁取り + 薄い発光を敷いて、暗い背景でも視認できるようにする。
       for (let i = 0; i < loots.length; i++) {
         const l = loots[i];
-        drawEmoji(ctx, l.emoji || '🔧', l.x, l.y, (l.r ? l.r * 2 : 22));
+        ctx.save();
+        // 薄い発光
+        ctx.beginPath();
+        ctx.arc(l.x, l.y, 20, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,210,0.16)';
+        ctx.fill();
+        // 白っぽい円バッジ
+        ctx.beginPath();
+        ctx.arc(l.x, l.y, 15, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.82)';
+        ctx.fill();
+        // 濃い縁取り
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#2a2438';
+        ctx.stroke();
+        ctx.restore();
+        drawEmoji(ctx, l.emoji || '🔧', l.x, l.y, 26);
       }
     }
 
@@ -2276,7 +2467,68 @@
       // 被弾無敵中は点滅(約12Hz)
       const invincible = gameTime < player.invincibleUntil;
       if (invincible && Math.floor(gameTime * 12) % 2 === 0) return;
-      drawEmoji(ctx, '✈️', player.x, player.y, 34);
+
+      const x = player.x, y = player.y;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.lineJoin = 'round';
+
+      // エンジン炎(下端・オレンジ・ちらつき)。機体本体より先に描いて下に潜らせる。
+      const flick = 0.7 + Math.random() * 0.5; // ちらつき係数
+      ctx.save();
+      ctx.globalAlpha = 0.85;
+      ctx.fillStyle = '#ff9a30';
+      ctx.beginPath();
+      ctx.moveTo(-4, 14);
+      ctx.lineTo(0, 14 + 10 * flick);
+      ctx.lineTo(4, 14);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#ffe070';
+      ctx.beginPath();
+      ctx.moveTo(-2, 14);
+      ctx.lineTo(0, 14 + 6 * flick);
+      ctx.lineTo(2, 14);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      // 上向き戦闘機シルエット(全長 約34・全幅 約30)。機首=上(y-)。
+      // 配色: 明るいシアン〜白基調 + 濃紺の縁取り。
+      ctx.strokeStyle = '#0a1a3a';
+      ctx.lineWidth = 2;
+      ctx.fillStyle = '#cdf2ff';
+      ctx.beginPath();
+      ctx.moveTo(0, -17);     // 機首(上)
+      ctx.lineTo(-3, -4);
+      ctx.lineTo(-15, 6);     // 左後退翼端
+      ctx.lineTo(-4, 6);
+      ctx.lineTo(-9, 15);     // 左尾翼
+      ctx.lineTo(0, 12);      // 尾中央
+      ctx.lineTo(9, 15);      // 右尾翼
+      ctx.lineTo(4, 6);
+      ctx.lineTo(15, 6);      // 右後退翼端
+      ctx.lineTo(3, -4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // 機体中央の明るいハイライト(白)
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(0, -14);
+      ctx.lineTo(-2.5, 4);
+      ctx.lineTo(2.5, 4);
+      ctx.closePath();
+      ctx.fill();
+
+      // コックピット(濃色)
+      ctx.fillStyle = '#14305c';
+      ctx.beginPath();
+      ctx.ellipse(0, -3, 2.6, 4.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
     }
 
     function drawEffects(ctx) {
