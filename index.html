@@ -696,7 +696,7 @@
 
       <div class="home-concepts">
         <span class="concept-badge">🗡️ 敵を倒す</span>
-        <span class="concept-badge">🔧 戦利品で強化</span>
+        <span class="concept-badge">🌰 戦利品で強化</span>
         <span class="concept-badge">🏆 30波突破</span>
       </div>
 
@@ -737,7 +737,7 @@
         <div class="rule-section">
           <h3>🕹️ 操作</h3>
           <p>画面をなぞると機体が動きます。ショットは<strong>自動発射</strong>です。</p>
-          <p>戦利品(🔧 ✨ 🎁)に<strong>機体を近づける</strong>と回収できます。</p>
+          <p>戦利品(🌰)に<strong>機体を近づける</strong>と回収できます。</p>
         </div>
 
         <div class="rule-section">
@@ -998,9 +998,9 @@
 
     // 戦利品の見た目・効果 (§17)
     const LOOT_TYPES = {
-      normal: { emoji: '🔧', exp: 1, r: 12 },
-      large:  { emoji: '✨', exp: 3, r: 12 },
-      boss:   { emoji: '🎁', exp: 8, r: 12 }
+      normal: { emoji: '🌰', exp: 1, r: 12 },
+      large:  { emoji: '🌰', exp: 3, r: 12 },
+      boss:   { emoji: '🌰', exp: 8, r: 12 }
     };
 
     // 敵タイプ → 戦利品ドロップ定義。
@@ -1042,7 +1042,7 @@
         emoji: '✈️', color: '#FFD24A', fireInterval: 1.3, shots: 1
       },
       large: {
-        hp: 10,  speedRange: [35, 45],  radius: 28, score: SCORE_TABLE.LARGE_ENEMY,
+        hp: 1,   speedRange: [35, 45],  radius: 28, score: SCORE_TABLE.LARGE_ENEMY,
         emoji: '🛫', color: '#FF6A5A', fireInterval: 1.0, shots: 3
       },
       boss: {
@@ -2439,8 +2439,8 @@
     }
 
     function drawLoots(ctx) {
-      // 絵文字 (🔧✨🎁) は仕様 §17 指定のため維持。背後に白っぽい半透明バッジ
-      // (半径15) + 濃い縁取り + 薄い発光を敷いて、暗い背景でも視認できるようにする。
+      // 戦利品はすべて 🌰 として表示する。背後に白っぽい半透明バッジ
+      // (半径15) + 濃い縁取り + 薄い発光を敷き、栗自体は不透明で見えるようにする。
       for (let i = 0; i < loots.length; i++) {
         const l = loots[i];
         ctx.save();
@@ -2459,7 +2459,10 @@
         ctx.strokeStyle = '#2a2438';
         ctx.stroke();
         ctx.restore();
-        drawEmoji(ctx, l.emoji || '🔧', l.x, l.y, 26);
+        ctx.save();
+        ctx.globalAlpha = 1;
+        drawEmoji(ctx, l.emoji || '🌰', l.x, l.y, 26);
+        ctx.restore();
       }
     }
 
