@@ -521,8 +521,8 @@
     }
 
     .result-stats {
-      display: flex;
-      justify-content: space-around;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px;
       background: rgba(255,255,255,0.06);
       border-radius: 12px;
@@ -879,6 +879,14 @@
           <div class="stat-label">戦利品</div>
           <div class="stat-value" id="result-loots">56個</div>
         </div>
+        <div class="stat-item">
+          <div class="stat-label">逃走</div>
+          <div class="stat-value" id="result-escaped">0機</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">未回収</div>
+          <div class="stat-value" id="result-loot-lost">0個</div>
+        </div>
       </div>
 
       <div class="result-submit-status" id="submit-status">---</div>
@@ -1183,10 +1191,11 @@
         addGroup('medium', mCount, 1.2, 0.8, ['sway', 'zigzag']);
         addGroup('large', lCount, 2.2, 1.4, ['sway', 'zigzag']);
       } else {
-        // 26〜29波: 高密度最終区間(small 28〜36 + medium 12〜16 + large 6〜8)。
-        const sCount = (14 + Math.floor((waveNo - 26) * 1.3)) * 2; // 28,30,32,34
-        const mCount = (6 + Math.floor((waveNo - 26) / 1.5)) * 2;  // 12,12,14,16
-        const lCount = (3 + Math.floor((waveNo - 26) / 3)) * 2;    // 6,6,6,8
+        // 26〜29波: 最終区間(small 24〜30 + medium 10〜14 + large 4〜6)。
+        // ボスTier3の攻略を主役にするため、通常敵の密度を少し抑える。
+        const sCount = (12 + Math.floor((waveNo - 26) * 1.3)) * 2; // 24,26,28,30
+        const mCount = (5 + Math.floor((waveNo - 26) / 1.5)) * 2;  // 10,10,12,14
+        const lCount = (2 + Math.floor((waveNo - 26) / 3)) * 2;    // 4,4,4,6
         addGroup('small', sCount, 0.3, 0.35, ['straight', 'sway', 'zigzag'], true);
         addGroup('medium', mCount, 1.0, 0.65, ['sway', 'zigzag']);
         addGroup('large', lCount, 2.0, 1.2, ['sway', 'zigzag']);
@@ -1317,6 +1326,8 @@
       shield:    PLAYER_INIT.shield,
       kills:     0,
       lootCount: 0,
+      escapedCount: 0,
+      lootLostCount: 0,
       isRetired: false,
       isCleared: false,
       // 強化カウント
@@ -1388,6 +1399,8 @@
         shield:    PLAYER_INIT.shield,
         kills:     0,
         lootCount: 0,
+        escapedCount: 0,
+        lootLostCount: 0,
         isRetired: false,
         isCleared: false,
         upgradeCounts: {
@@ -1501,10 +1514,11 @@
      * プレイヤー: 目標位置へ補間追従し、自動ショットを撃つ
      */
     function updatePlayer(delta) {
-      // pointerdown 中のみ目標を追う。離した後は最後の目標位置を保持。
-      // どちらでも目標へ向けて lerp する(ヌルっと追従)。
-      player.x += (player.targetX - player.x) * PLAYER_LERP;
-      player.y += (player.targetY - player.y) * PLAYER_LERP;
+      // 60fps時の追従感を基準にしつつ、経過時間に応じた補間係数へ変換する。
+      // 端末のフレームレートが違っても、1秒あたりの追従速度を揃える。
+      const follow = 1 - Math.pow(1 - PLAYER_LERP, delta * 60);
+      player.x += (player.targetX - player.x) * follow;
+      player.y += (player.targetY - player.y) * follow;
       clampPlayer();
 
       // 自動ショット
@@ -1563,7 +1577,7 @@
     /**
      * 敵を生成して enemies に追加する。
      * ウェーブ番号(現在の gameState.wave)に応じて HP をスケーリングし、
-     * 21 波以降は medium/large の弾密度(fireInterval)を 0.85 倍にする (§16/§21)。
+     * 26 波以降は medium/large の発射間隔を 0.90 倍にする。
      * type が 'boss' のときはボス専用パラメータ(BOSS_TABLE)で生成する。
      * @param {'small'|'medium'|'large'|'boss'} type
      * @param {number} x 出現 x(論理)
@@ -1581,10 +1595,10 @@
       const waveNo = gameState.wave;
       // 後半ウェーブの HP 強化(切り上げ)
       const hp = Math.ceil(def.hp * waveHpScale(waveNo));
-      // 弾密度上昇: 21 波以降は medium/large の発射間隔を短縮 (§21)
+      // 弾密度上昇: W21では敵数・HPだけを増やし、発射間隔の短縮はW26から始める。
       let fireInterval = def.fireInterval;
-      if (fireInterval > 0 && waveNo >= 21 && (type === 'medium' || type === 'large')) {
-        fireInterval *= 0.85;
+      if (fireInterval > 0 && waveNo >= 26 && (type === 'medium' || type === 'large')) {
+        fireInterval *= 0.90;
       }
       const speed = rand(def.speedRange[0], def.speedRange[1]);
       enemies.push({
@@ -1961,10 +1975,13 @@
           enemyBullets.splice(i, 1);
         }
       }
-      // 敵: 撃破済み(dead) or 画面下端を通過(すり抜けペナルティなし)
+      // 敵: 撃破済み(dead) or 画面下端を通過
       for (let i = enemies.length - 1; i >= 0; i--) {
         const e = enemies[i];
         if (e.dead || e.y - e.r > botKill) {
+          if (!e.dead && e.y - e.r > botKill) {
+            gameState.escapedCount++;
+          }
           enemies.splice(i, 1);
         }
       }
@@ -1975,7 +1992,12 @@
       // 戦利品: 回収済み(dead) or 画面外
       for (let i = loots.length - 1; i >= 0; i--) {
         const l = loots[i];
-        if (l.dead || l.y > botKill) loots.splice(i, 1);
+        if (l.dead || l.y > botKill) {
+          if (!l.dead && l.y > botKill) {
+            gameState.lootLostCount++;
+          }
+          loots.splice(i, 1);
+        }
       }
       // 浮遊テキスト: 寿命切れ
       for (let i = floatTexts.length - 1; i >= 0; i--) {
@@ -2807,7 +2829,22 @@
         return;
       }
 
-      const pick = candidates[Math.floor(Math.random() * candidates.length)];
+      // 最初の強化だけは攻撃系に限定し、W5ボスが強化運だけで決まらないようにする。
+      const isFirstUpgrade =
+        gameState.upgradeCounts.bullet === 0 &&
+        gameState.upgradeCounts.firerate === 0 &&
+        gameState.upgradeCounts.piercing === 0 &&
+        gameState.upgradeCounts.shield === 0 &&
+        gameState.upgradeCounts.maxhp === 0 &&
+        gameState.upgradeCounts.collectrange === 0 &&
+        gameState.upgradeCounts.hitreduce === 0;
+      const firstUpgradeCandidates = candidates.filter(function (u) {
+        return u.id === 'bullet' || u.id === 'firerate';
+      });
+      const pool = isFirstUpgrade && firstUpgradeCandidates.length > 0
+        ? firstUpgradeCandidates
+        : candidates;
+      const pick = pool[Math.floor(Math.random() * pool.length)];
       applyUpgrade(pick.id);
       gameState.upgradeCounts[pick.id]++;
       pushLevelUpText('LEVEL UP! ' + pick.label);
@@ -2923,9 +2960,13 @@
         exp: def.exp,
         dead: false
       });
-      // 上限保険: 古いものから捨てる
+      // 上限保険: 古いものから捨てる。消失数を記録して、回収できなかった理由を結果画面で確認できるようにする。
       if (loots.length > MAX_LOOTS) {
-        loots.splice(0, loots.length - MAX_LOOTS);
+        const removeCount = loots.length - MAX_LOOTS;
+        for (let i = 0; i < removeCount; i++) {
+          if (!loots[i].dead) gameState.lootLostCount++;
+        }
+        loots.splice(0, removeCount);
       }
     }
 
@@ -2998,9 +3039,11 @@
       document.getElementById('result-score-text').textContent = formatScore(gameState.score) + '点';
 
       // 詳細
-      document.getElementById('result-lv').textContent    = 'Lv.' + gameState.level;
-      document.getElementById('result-kills').textContent  = gameState.kills + '機';
-      document.getElementById('result-loots').textContent  = gameState.lootCount + '個';
+      document.getElementById('result-lv').textContent       = 'Lv.' + gameState.level;
+      document.getElementById('result-kills').textContent     = gameState.kills + '機';
+      document.getElementById('result-loots').textContent     = gameState.lootCount + '個';
+      document.getElementById('result-escaped').textContent   = gameState.escapedCount + '機';
+      document.getElementById('result-loot-lost').textContent = gameState.lootLostCount + '個';
 
       // 送信状態 (§27/§28)
       document.getElementById('submit-status').textContent =
