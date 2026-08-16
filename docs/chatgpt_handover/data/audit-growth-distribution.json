@@ -1,0 +1,502 @@
+{
+  "trials": 100000,
+  "assumptions": "全敵撃破・全戦利品回収。敵弾回避失敗、戦利品の画面外消失、最大40個上限は含まない楽観上限。DPS/TTKは全弾命中の理論値。",
+  "expectedXpByWave": [
+    {
+      "wave": 1,
+      "composition": {
+        "small": 12
+      },
+      "expectedXp": 2.1
+    },
+    {
+      "wave": 2,
+      "composition": {
+        "small": 14
+      },
+      "expectedXp": 2.45
+    },
+    {
+      "wave": 3,
+      "composition": {
+        "small": 16
+      },
+      "expectedXp": 2.8
+    },
+    {
+      "wave": 4,
+      "composition": {
+        "small": 18
+      },
+      "expectedXp": 3.15
+    },
+    {
+      "wave": 5,
+      "composition": {
+        "boss": 1,
+        "small": 8
+      },
+      "expectedXp": 25.4
+    },
+    {
+      "wave": 6,
+      "composition": {
+        "small": 16,
+        "medium": 2
+      },
+      "expectedXp": 3.92
+    },
+    {
+      "wave": 7,
+      "composition": {
+        "small": 18,
+        "medium": 2
+      },
+      "expectedXp": 4.27
+    },
+    {
+      "wave": 8,
+      "composition": {
+        "small": 20,
+        "medium": 4
+      },
+      "expectedXp": 5.74
+    },
+    {
+      "wave": 9,
+      "composition": {
+        "small": 22,
+        "medium": 6
+      },
+      "expectedXp": 7.21
+    },
+    {
+      "wave": 10,
+      "composition": {
+        "boss": 1,
+        "small": 12
+      },
+      "expectedXp": 26.1
+    },
+    {
+      "wave": 11,
+      "composition": {
+        "small": 22,
+        "medium": 6,
+        "large": 2
+      },
+      "expectedXp": 10.21
+    },
+    {
+      "wave": 12,
+      "composition": {
+        "small": 24,
+        "medium": 6,
+        "large": 2
+      },
+      "expectedXp": 10.56
+    },
+    {
+      "wave": 13,
+      "composition": {
+        "small": 26,
+        "medium": 8,
+        "large": 2
+      },
+      "expectedXp": 12.03
+    },
+    {
+      "wave": 14,
+      "composition": {
+        "small": 28,
+        "medium": 8,
+        "large": 4
+      },
+      "expectedXp": 15.38
+    },
+    {
+      "wave": 15,
+      "composition": {
+        "boss": 1,
+        "medium": 6
+      },
+      "expectedXp": 27.36
+    },
+    {
+      "wave": 16,
+      "composition": {
+        "small": 18,
+        "medium": 10,
+        "large": 4
+      },
+      "expectedXp": 14.75
+    },
+    {
+      "wave": 17,
+      "composition": {
+        "small": 18,
+        "medium": 10,
+        "large": 4
+      },
+      "expectedXp": 14.75
+    },
+    {
+      "wave": 18,
+      "composition": {
+        "small": 18,
+        "medium": 12,
+        "large": 4
+      },
+      "expectedXp": 15.87
+    },
+    {
+      "wave": 19,
+      "composition": {
+        "small": 18,
+        "medium": 14,
+        "large": 6
+      },
+      "expectedXp": 19.99
+    },
+    {
+      "wave": 20,
+      "composition": {
+        "boss": 1,
+        "medium": 6
+      },
+      "expectedXp": 27.36
+    },
+    {
+      "wave": 21,
+      "composition": {
+        "small": 24,
+        "medium": 10,
+        "large": 4
+      },
+      "expectedXp": 15.8
+    },
+    {
+      "wave": 22,
+      "composition": {
+        "small": 26,
+        "medium": 10,
+        "large": 4
+      },
+      "expectedXp": 16.15
+    },
+    {
+      "wave": 23,
+      "composition": {
+        "small": 28,
+        "medium": 12,
+        "large": 6
+      },
+      "expectedXp": 20.62
+    },
+    {
+      "wave": 24,
+      "composition": {
+        "small": 30,
+        "medium": 14,
+        "large": 6
+      },
+      "expectedXp": 22.09
+    },
+    {
+      "wave": 25,
+      "composition": {
+        "boss": 1,
+        "large": 4
+      },
+      "expectedXp": 30
+    },
+    {
+      "wave": 26,
+      "composition": {
+        "small": 28,
+        "medium": 12,
+        "large": 6
+      },
+      "expectedXp": 20.62
+    },
+    {
+      "wave": 27,
+      "composition": {
+        "small": 30,
+        "medium": 12,
+        "large": 6
+      },
+      "expectedXp": 20.97
+    },
+    {
+      "wave": 28,
+      "composition": {
+        "small": 32,
+        "medium": 14,
+        "large": 6
+      },
+      "expectedXp": 22.44
+    },
+    {
+      "wave": 29,
+      "composition": {
+        "small": 34,
+        "medium": 16,
+        "large": 8
+      },
+      "expectedXp": 26.91
+    },
+    {
+      "wave": 30,
+      "composition": {
+        "boss": 1,
+        "medium": 4
+      },
+      "expectedXp": 26.24
+    }
+  ],
+  "summary": [
+    {
+      "wave": 5,
+      "level": {
+        "p10": 4,
+        "p50": 5,
+        "p90": 5
+      },
+      "exp": {
+        "p10": 32,
+        "p50": 36,
+        "p90": 40
+      },
+      "dps": {
+        "p10": 2.5,
+        "p50": 3.46,
+        "p90": 6.92
+      },
+      "noOffenseProbability": 0.13152,
+      "noSurvivalProbability": 0.11746
+    },
+    {
+      "wave": 10,
+      "level": {
+        "p10": 7,
+        "p50": 7,
+        "p90": 7
+      },
+      "exp": {
+        "p10": 76,
+        "p50": 83,
+        "p90": 91
+      },
+      "dps": {
+        "p10": 2.5,
+        "p50": 5,
+        "p90": 8.82
+      },
+      "noOffenseProbability": 0.03036,
+      "noSurvivalProbability": 0.02395
+    },
+    {
+      "wave": 15,
+      "level": {
+        "p10": 9,
+        "p50": 9,
+        "p90": 10
+      },
+      "exp": {
+        "p10": 146,
+        "p50": 159,
+        "p90": 172
+      },
+      "dps": {
+        "p10": 2.94,
+        "p50": 6.92,
+        "p90": 10.38
+      },
+      "noOffenseProbability": 0.00611,
+      "noSurvivalProbability": 0.00422
+    },
+    {
+      "wave": 20,
+      "level": {
+        "p10": 11,
+        "p50": 11,
+        "p90": 12
+      },
+      "exp": {
+        "p10": 233,
+        "p50": 251,
+        "p90": 270
+      },
+      "dps": {
+        "p10": 4.07,
+        "p50": 8.14,
+        "p90": 12.21
+      },
+      "noOffenseProbability": 0.00075,
+      "noSurvivalProbability": 0.00055
+    },
+    {
+      "wave": 25,
+      "level": {
+        "p10": 12,
+        "p50": 12,
+        "p90": 12
+      },
+      "exp": {
+        "p10": 334,
+        "p50": 356,
+        "p90": 379
+      },
+      "dps": {
+        "p10": 4.79,
+        "p50": 8.82,
+        "p90": 13.84
+      },
+      "noOffenseProbability": 0.00018,
+      "noSurvivalProbability": 0.00008
+    },
+    {
+      "wave": 30,
+      "level": {
+        "p10": 12,
+        "p50": 12,
+        "p90": 12
+      },
+      "exp": {
+        "p10": 446,
+        "p50": 473,
+        "p90": 500
+      },
+      "dps": {
+        "p10": 4.79,
+        "p50": 8.82,
+        "p90": 13.84
+      },
+      "noOffenseProbability": 0.00018,
+      "noSurvivalProbability": 0.00008
+    }
+  ],
+  "bossPrepSummary": [
+    {
+      "wave": 5,
+      "bossHp": 60,
+      "level": {
+        "p10": 2,
+        "p50": 2,
+        "p90": 3
+      },
+      "dps": {
+        "p10": 2.5,
+        "p50": 2.5,
+        "p90": 5
+      },
+      "optimisticTtkSec": {
+        "p10": 12,
+        "p50": 24,
+        "p90": 24
+      },
+      "noOffenseProbability": 0.49141
+    },
+    {
+      "wave": 10,
+      "bossHp": 110,
+      "level": {
+        "p10": 5,
+        "p50": 6,
+        "p90": 6
+      },
+      "dps": {
+        "p10": 2.5,
+        "p50": 5,
+        "p90": 7.5
+      },
+      "optimisticTtkSec": {
+        "p10": 14.7,
+        "p50": 22,
+        "p90": 44
+      },
+      "noOffenseProbability": 0.06204
+    },
+    {
+      "wave": 15,
+      "bossHp": 170,
+      "level": {
+        "p10": 8,
+        "p50": 9,
+        "p90": 9
+      },
+      "dps": {
+        "p10": 2.94,
+        "p50": 5.88,
+        "p90": 10.38
+      },
+      "optimisticTtkSec": {
+        "p10": 16.4,
+        "p50": 28.9,
+        "p90": 57.8
+      },
+      "noOffenseProbability": 0.01077
+    },
+    {
+      "wave": 20,
+      "bossHp": 240,
+      "level": {
+        "p10": 10,
+        "p50": 11,
+        "p90": 11
+      },
+      "dps": {
+        "p10": 3.46,
+        "p50": 8.14,
+        "p90": 12.21
+      },
+      "optimisticTtkSec": {
+        "p10": 19.7,
+        "p50": 29.5,
+        "p90": 69.4
+      },
+      "noOffenseProbability": 0.00119
+    },
+    {
+      "wave": 25,
+      "bossHp": 290,
+      "level": {
+        "p10": 12,
+        "p50": 12,
+        "p90": 12
+      },
+      "dps": {
+        "p10": 4.79,
+        "p50": 8.82,
+        "p90": 13.84
+      },
+      "optimisticTtkSec": {
+        "p10": 21,
+        "p50": 32.9,
+        "p90": 60.6
+      },
+      "noOffenseProbability": 0.00018
+    },
+    {
+      "wave": 30,
+      "bossHp": 340,
+      "level": {
+        "p10": 12,
+        "p50": 12,
+        "p90": 12
+      },
+      "dps": {
+        "p10": 4.79,
+        "p50": 8.82,
+        "p90": 13.84
+      },
+      "optimisticTtkSec": {
+        "p10": 24.6,
+        "p50": 38.5,
+        "p90": 71
+      },
+      "noOffenseProbability": 0.00018
+    }
+  ]
+}
