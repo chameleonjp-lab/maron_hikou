@@ -1736,14 +1736,6 @@
     }
 
     /**
-     * ボスの更新 (§16/§21)。
-     *  1. BOSS_STOP_Y まで降下 → 到達後は左右往復(sin)。
-     *  2. 弾幕はフェーズ制: HP 50% 以下で攻撃間隔 0.75 倍。
-     *  3. tier 別パターンは fireBossBullets で分岐。tier3 は円形弾を BOSS_RING_INTERVAL ごと。
-     * @param {object} e ボス
-     * @param {number} delta
-     */
-    /**
      * 次に出すボス通常弾幕の種類を返す。
      * 予告と発射で同じ種類を使うため、表示と実際の弾道がずれない。
      * @param {object} e ボス
@@ -1769,6 +1761,14 @@
       };
     }
 
+    /**
+     * ボスの更新 (§16/§21)。
+     *  1. BOSS_STOP_Y まで降下 → 到達後は左右往復(sin)。
+     *  2. 弾幕はフェーズ制: HP 50% 以下で攻撃間隔 0.75 倍。
+     *  3. 通常弾幕とTier 3の円形弾を、それぞれ予告してから発射する。
+     * @param {object} e ボス
+     * @param {number} delta
+     */
     function updateBoss(e, delta) {
       if (!e.arrived) {
         // 降下
