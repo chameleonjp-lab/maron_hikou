@@ -748,6 +748,7 @@
         <div class="rule-section">
           <h3>👾 ウェーブ</h3>
           <p>全30波。<strong>5波ごとにボス</strong>が出現します。30波のボスを倒すとクリアです。</p>
+          <p>ボスの<strong>赤い線と円</strong>は攻撃予告です。表示中に安全な位置へ移動してください。</p>
         </div>
 
         <div class="rule-section">
@@ -1082,6 +1083,7 @@
     const BOSS_SWAY_PERIOD = 5.0;           // 往復周期 秒
     const BOSS_RING_INTERVAL = 4.0;         // tier3 円形弾の周期 秒
     const BOSS_RING_COUNT    = 12;          // 円形弾の方向数
+    const BOSS_TELEGRAPH_LEAD = 0.55;        // 発射前に予告する時間(秒)
 
     /**
      * ウェーブ番号 → 敵 HP スケーリング倍率 (§16/§21)。
@@ -1183,7 +1185,7 @@
         addGroup('medium', mCount, 1.4, 0.9, ['sway', 'zigzag']);
         addGroup('large', lCount, 2.5, 1.6, ['straight', 'sway']);
       } else if (waveNo <= 24) {
-        // 21〜24波: 全種増量。敵弾密度上昇(fireInterval ×0.85 は spawn 時に適用)。
+        // 21〜24波: 全種増量。敵弾密度上昇はW26から適用。
         const sCount = (12 + (waveNo - 21)) * 2;              // 24,26,28,30
         const mCount = (5 + Math.floor((waveNo - 21) / 1.2)) * 2; // 10,10,12,14
         const lCount = (2 + Math.floor((waveNo - 21) / 2)) * 2;   // 4,4,6,6
@@ -1653,6 +1655,8 @@
         baseFire: conf.fire,
         fireTimer: 1.2,                 // 登場後すぐは撃たない
         ringTimer: BOSS_RING_INTERVAL,  // tier3 円形弾の周期
+        normalTelegraph: null,          // 通常弾幕の予告状態
+        ringTelegraph: null,            // 円形弾の予告状態
         aimToggle: false,               // 5-way と aimed を交互に出すための切替
         swayT: 0,
         arrived: false,                 // 停止位置に到達したか
@@ -1739,6 +1743,32 @@
      * @param {object} e ボス
      * @param {number} delta
      */
+    /**
+     * 次に出すボス通常弾幕の種類を返す。
+     * 予告と発射で同じ種類を使うため、表示と実際の弾道がずれない。
+     * @param {object} e ボス
+     * @returns {'fan3'|'fan5'|'aim1'|'aim2'}
+     */
+    function getBossAttackKind(e) {
+      if (e.tier === 1) return 'fan3';
+      return e.aimToggle ? (e.tier >= 3 ? 'aim2' : 'aim1') : 'fan5';
+    }
+
+    /**
+     * 通常弾幕の予告を開始する。狙い撃ちは、この時点の機体位置を固定する。
+     * @param {object} e ボス
+     */
+    function beginBossNormalTelegraph(e) {
+      const kind = getBossAttackKind(e);
+      const aimed = kind === 'aim1' || kind === 'aim2';
+      e.normalTelegraph = {
+        kind: kind,
+        remaining: Math.max(0, e.fireTimer),
+        targetX: aimed ? player.x : null,
+        targetY: aimed ? player.y : null
+      };
+    }
+
     function updateBoss(e, delta) {
       if (!e.arrived) {
         // 降下
@@ -1758,19 +1788,40 @@
       const phaseMul = (e.hp <= e.maxHp * 0.5) ? 0.75 : 1.0;
       const fire = e.baseFire * phaseMul;
 
-      // 通常弾幕
+      // 通常弾幕: 残り0.55秒から予告し、予告時の狙い位置へ発射する。
       e.fireTimer -= delta;
+      if (e.normalTelegraph) {
+        e.normalTelegraph.remaining = Math.max(0, e.fireTimer);
+      } else if (e.fireTimer <= BOSS_TELEGRAPH_LEAD) {
+        beginBossNormalTelegraph(e);
+      }
       if (e.fireTimer <= 0) {
-        fireBossBullets(e);
+        const warning = e.normalTelegraph;
+        const kind = warning ? warning.kind : getBossAttackKind(e);
+        fireBossBullets(
+          e,
+          kind,
+          warning ? warning.targetX : null,
+          warning ? warning.targetY : null
+        );
+        e.normalTelegraph = null;
         e.fireTimer += fire;
         if (e.fireTimer <= 0) e.fireTimer = fire;
       }
 
-      // tier3: 周期的な円形弾(12方向)
+      // tier3: 周期的な円形弾(12方向)も、発射前に別の予告を出す。
       if (e.tier >= 3) {
         e.ringTimer -= delta;
+        if (e.ringTelegraph) {
+          e.ringTelegraph.remaining = Math.max(0, e.ringTimer);
+        } else if (e.ringTimer <= BOSS_TELEGRAPH_LEAD) {
+          e.ringTelegraph = {
+            remaining: Math.max(0, e.ringTimer)
+          };
+        }
         if (e.ringTimer <= 0) {
           fireBossRing(e);
+          e.ringTelegraph = null;
           e.ringTimer += BOSS_RING_INTERVAL;
           if (e.ringTimer <= 0) e.ringTimer = BOSS_RING_INTERVAL;
         }
@@ -1784,10 +1835,36 @@
      *  tier3: 5-way と aimed 2連 を交互(円形弾は別途 fireBossRing)
      * @param {object} e ボス
      */
-    function fireBossBullets(e) {
-      const sx = e.x, sy = e.y + e.r * 0.4;
+    /**
+     * n-way弾の角度列を返す。予告線と実弾で共有する。
+     * @param {number} n 弾数
+     * @param {number} spreadDeg 全体の開き(度)
+     * @returns {Array<number>}
+     */
+    function getBossFanAngles(n, spreadDeg) {
       const down = Math.PI / 2;
-      const aimAngle = Math.atan2(player.y - sy, player.x - sx);
+      const spread = spreadDeg * Math.PI / 180;
+      const angles = [];
+      for (let i = 0; i < n; i++) {
+        angles.push(down + (i - (n - 1) / 2) * (spread / (n - 1 || 1)));
+      }
+      return angles;
+    }
+
+    /**
+     * ボスの通常弾幕を1セット発射する (§21)。
+     * attackKind は直前の予告で確定した種類。狙い撃ちは予告時の位置へ向ける。
+     * @param {object} e ボス
+     * @param {'fan3'|'fan5'|'aim1'|'aim2'} attackKind
+     * @param {?number} targetX 予告時に固定した機体X
+     * @param {?number} targetY 予告時に固定した機体Y
+     */
+    function fireBossBullets(e, attackKind, targetX, targetY) {
+      const sx = e.x, sy = e.y + e.r * 0.4;
+      const kind = attackKind || getBossAttackKind(e);
+      const aimX = Number.isFinite(targetX) ? targetX : player.x;
+      const aimY = Number.isFinite(targetY) ? targetY : player.y;
+      const aimAngle = Math.atan2(aimY - sy, aimX - sx);
 
       function shoot(angle) {
         enemyBullets.push({
@@ -1797,34 +1874,21 @@
           r: ENEMY_BULLET_RADIUS
         });
       }
-      function nway(n, spreadDeg) {
-        const spread = spreadDeg * Math.PI / 180;
-        for (let i = 0; i < n; i++) {
-          const a = down + (i - (n - 1) / 2) * (spread / (n - 1 || 1));
-          shoot(a);
-        }
+
+      if (kind === 'fan3') {
+        getBossFanAngles(3, 50).forEach(shoot);
+      } else if (kind === 'aim1') {
+        shoot(aimAngle);                 // 狙い撃ち単発
+      } else if (kind === 'aim2') {
+        // aimed 2連(角度差±6°で視認できる2発にする)
+        const d6 = 6 * Math.PI / 180;
+        shoot(aimAngle - d6);
+        shoot(aimAngle + d6);
+      } else {
+        getBossFanAngles(5, 80).forEach(shoot); // 5-way
       }
 
-      if (e.tier === 1) {
-        nway(3, 50);
-      } else if (e.tier === 2) {
-        if (e.aimToggle) {
-          shoot(aimAngle);              // 狙い撃ち単発
-        } else {
-          nway(5, 80);                  // 5-way
-        }
-        e.aimToggle = !e.aimToggle;
-      } else { // tier3
-        if (e.aimToggle) {
-          // aimed 2連(角度差±6°で視認できる2発にする)
-          const d6 = 6 * Math.PI / 180;
-          shoot(aimAngle - d6);
-          shoot(aimAngle + d6);
-        } else {
-          nway(5, 80);
-        }
-        e.aimToggle = !e.aimToggle;
-      }
+      if (e.tier >= 2) e.aimToggle = !e.aimToggle;
 
       if (enemyBullets.length > MAX_ENEMY_BULLETS) {
         enemyBullets.splice(0, enemyBullets.length - MAX_ENEMY_BULLETS);
@@ -2119,6 +2183,7 @@
       ctx.clearRect(0, 0, CANVAS_LOGIC_WIDTH, LOGIC_H);
 
       drawBackground(ctx);
+      drawBossTelegraphs(ctx);  // ボスの発射前予告。敵本体の背後に描く。
       drawCollectRange(ctx);   // §17: 戦利品が拾える距離を薄い円で可視化
       drawLoots(ctx);
       drawEnemies(ctx);
@@ -2128,6 +2193,140 @@
       drawEffects(ctx);
       drawBossHpBar(ctx);      // §21: ボス HP バーを画面上部に
       drawFloatTexts(ctx);     // §18: レベルアップ表示は最前面に
+    }
+
+    /**
+     * ボスの攻撃予告を描く。
+     * 予告中の線・円は、次に発射する弾の軌道を示す。
+     */
+    function drawBossTelegraphs(ctx) {
+      for (let i = 0; i < enemies.length; i++) {
+        const e = enemies[i];
+        if (!e.isBoss || e.dead) continue;
+        if (e.normalTelegraph) {
+          drawBossNormalTelegraph(ctx, e, e.normalTelegraph);
+        }
+        if (e.ringTelegraph) {
+          drawBossRingTelegraph(ctx, e, e.ringTelegraph);
+        }
+      }
+    }
+
+    function telegraphProgress(telegraph) {
+      return 1 - Math.max(
+        0,
+        Math.min(1, telegraph.remaining / BOSS_TELEGRAPH_LEAD)
+      );
+    }
+
+    /**
+     * 通常弾幕の予告線を描く。
+     * fan は下向きの実弾と同じ角度、aim は予告開始時の機体位置を示す。
+     */
+    function drawBossNormalTelegraph(ctx, e, telegraph) {
+      const progress = telegraphProgress(telegraph);
+      const pulse = 0.5 + 0.5 * Math.sin(gameTime * 18);
+      const sx = e.x;
+      const sy = e.y + e.r * 0.4;
+      let angles;
+      const isAimed = telegraph.kind === 'aim1' || telegraph.kind === 'aim2';
+
+      if (telegraph.kind === 'fan3') {
+        angles = getBossFanAngles(3, 50);
+      } else if (telegraph.kind === 'fan5') {
+        angles = getBossFanAngles(5, 80);
+      } else {
+        const tx = Number.isFinite(telegraph.targetX) ? telegraph.targetX : player.x;
+        const ty = Number.isFinite(telegraph.targetY) ? telegraph.targetY : player.y;
+        const aimAngle = Math.atan2(ty - sy, tx - sx);
+        if (telegraph.kind === 'aim2') {
+          const d6 = 6 * Math.PI / 180;
+          angles = [aimAngle - d6, aimAngle + d6];
+        } else {
+          angles = [aimAngle];
+        }
+      }
+
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#ff554f';
+      ctx.globalAlpha = 0.22 + progress * 0.22 + pulse * 0.08;
+      ctx.setLineDash([10, 8]);
+      const length = Math.max(160, LOGIC_H + 80);
+      for (let i = 0; i < angles.length; i++) {
+        const a = angles[i];
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(sx + Math.cos(a) * length, sy + Math.sin(a) * length);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+
+      // 狙い撃ちでは、予告時の着弾位置を小さな照準で示す。
+      if (isAimed) {
+        const tx = Number.isFinite(telegraph.targetX) ? telegraph.targetX : player.x;
+        const ty = Number.isFinite(telegraph.targetY) ? telegraph.targetY : player.y;
+        ctx.globalAlpha = 0.72 + pulse * 0.18;
+        ctx.strokeStyle = '#ffb060';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(tx, ty, 11 + progress * 3, 0, Math.PI * 2);
+        ctx.moveTo(tx - 15, ty);
+        ctx.lineTo(tx + 15, ty);
+        ctx.moveTo(tx, ty - 15);
+        ctx.lineTo(tx, ty + 15);
+        ctx.stroke();
+      }
+
+      // ボスの上に「!」を出し、線が細く見える端末でも予告中だと分かるようにする。
+      ctx.globalAlpha = 0.75 + pulse * 0.25;
+      ctx.fillStyle = '#ff8060';
+      ctx.font = '900 18px -apple-system, "Hiragino Sans", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('!', e.x, e.y - e.r - 12);
+      ctx.restore();
+    }
+
+    /**
+     * tier3 円形弾の予告を描く。
+     * 実際の12方向弾と同じ方向数の放射線と、広がる円で示す。
+     */
+    function drawBossRingTelegraph(ctx, e, telegraph) {
+      const progress = telegraphProgress(telegraph);
+      const pulse = 0.5 + 0.5 * Math.sin(gameTime * 18 + Math.PI / 3);
+      const sx = e.x;
+      const sy = e.y;
+      const radius = 28 + progress * Math.min(100, LOGIC_H * 0.2);
+
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#ffb040';
+      ctx.globalAlpha = 0.2 + progress * 0.24 + pulse * 0.08;
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([8, 7]);
+      ctx.beginPath();
+      ctx.arc(sx, sy, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.globalAlpha = 0.18 + progress * 0.16;
+      for (let i = 0; i < BOSS_RING_COUNT; i++) {
+        const a = Math.PI * 2 * i / BOSS_RING_COUNT;
+        ctx.beginPath();
+        ctx.moveTo(sx + Math.cos(a) * 18, sy + Math.sin(a) * 18);
+        ctx.lineTo(sx + Math.cos(a) * radius, sy + Math.sin(a) * radius);
+        ctx.stroke();
+      }
+
+      ctx.globalAlpha = 0.75 + pulse * 0.25;
+      ctx.fillStyle = '#ffd070';
+      ctx.font = '900 18px -apple-system, "Hiragino Sans", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('!', e.x, e.y - e.r - 12);
+      ctx.restore();
     }
 
     /**
