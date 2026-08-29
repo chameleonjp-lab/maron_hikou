@@ -551,6 +551,18 @@
       min-height: 22px;
     }
 
+    .result-run-info {
+      display: none;
+      text-align: center;
+      font-size: 0.72rem;
+      line-height: 1.45;
+      color: #8888a8;
+      overflow-wrap: anywhere;
+    }
+    .result-run-info.visible {
+      display: block;
+    }
+
     .result-best-update {
       text-align: center;
       font-size: 0.88rem;
@@ -891,6 +903,7 @@
       </div>
 
       <div class="result-submit-status" id="submit-status">---</div>
+      <div class="result-run-info" id="result-run-info"></div>
       <div class="result-best-update" id="result-best-update"></div>
 
       <div class="result-btn-group">
@@ -928,6 +941,69 @@
     const CANVAS_LOGIC_WIDTH = 400;
     const PLAYER_NAME_KEY = 'maron_hikou_player_name';
     const BEST_SCORE_KEY  = 'maron_hikou_best_score'; // 自己ベスト(ranking_score)。永続強化ではなく記録のみ
+
+    // 監査用固定シード。通常URLには影響せず、ランキング送信もしない。
+    const AUDIT_SEED_PARAM = 'audit_seed';
+
+    function readAuditSeed() {
+      try {
+        const raw = new URLSearchParams(window.location.search).get(AUDIT_SEED_PARAM);
+        const value = raw == null ? '' : raw.trim();
+        return value ? value.slice(0, 64) : null;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    const AUDIT_SEED = readAuditSeed();
+    const AUDIT_MODE = AUDIT_SEED !== null;
+
+    // ゲーム結果に関係する乱数は、演出用乱数と分離する。
+    let gameRng = Math.random;
+
+    function hashSeed(seedText) {
+      let hash = 2166136261;
+      for (let i = 0; i < seedText.length; i++) {
+        hash ^= seedText.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+      }
+      return (hash >>> 0) || 0x9e3779b9;
+    }
+
+    // xorshift32。外部ライブラリを使わず、同じシードから同じ列を返す。
+    function createSeededRng(seedText) {
+      let state = hashSeed(seedText);
+      return function () {
+        state ^= state << 13;
+        state ^= state >>> 17;
+        state ^= state << 5;
+        state >>>= 0;
+        return state / 4294967296;
+      };
+    }
+
+    function initializeGameRng(seed) {
+      gameRng = seed === null ? Math.random : createSeededRng(String(seed));
+    }
+
+    function gameRandom() {
+      return gameRng();
+    }
+
+    // 描画だけに使う乱数。演出を変更してもゲーム結果の乱数列を消費しない。
+    function visualRandom() {
+      return Math.random();
+    }
+
+    function createPlayId() {
+      if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+      }
+      const now = typeof performance !== 'undefined' && typeof performance.now === 'function'
+        ? performance.now()
+        : 0;
+      return String(Date.now()) + '-' + String(now);
+    }
 
     // Supabase 接続情報(docs/ranking-spec.md 共通仕様。Publishable key は公開可)
     const SUPABASE_URL = 'https://mlpnjgezrnhdxsxolyzj.supabase.co';
@@ -1129,7 +1205,7 @@
           } else {
             x = randX();
           }
-          const pat = patterns[Math.floor(Math.random() * patterns.length)];
+          const pat = patterns[Math.floor(gameRandom() * patterns.length)];
           spawns.push({ type: type, x: x, pattern: pat, t: t });
           t += interval * rand(0.8, 1.2);
         }
@@ -1320,6 +1396,8 @@
 
     let gameState = {
       score:     0,
+      auditMode: AUDIT_MODE,
+      seed:      AUDIT_SEED,
       wave:      1,
       level:     1,
       exp:       0,
@@ -1390,9 +1468,13 @@
     /**
      * ゲームステートをリセットして新しいプレイを開始する準備
      */
-    function resetGameState() {
+    function resetGameState(seed) {
+      const runSeed = seed == null ? (AUDIT_MODE ? AUDIT_SEED : null) : String(seed);
+      initializeGameRng(runSeed);
       gameState = {
         score:     0,
+        auditMode: runSeed !== null,
+        seed:      runSeed,
         wave:      1,
         level:     1,
         exp:       0,
@@ -1414,7 +1496,7 @@
           collectrange: 0,
           hitreduce:    0
         },
-        playId: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
+        playId: createPlayId(),
         scoreSent: false
       };
       const startY = (typeof LOGIC_H === 'number' ? LOGIC_H : 600) - 120;
@@ -1488,7 +1570,7 @@
     }
 
     // ----- 数値ユーティリティ -----
-    function rand(min, max) { return min + Math.random() * (max - min); }
+    function rand(min, max) { return min + gameRandom() * (max - min); }
     function dist2(ax, ay, bx, by) { const dx = ax - bx, dy = ay - by; return dx * dx + dy * dy; }
 
     /**
@@ -1616,8 +1698,8 @@
         emoji: def.emoji,
         color: def.color,
         pattern: pattern || 'straight',
-        swayT: Math.random() * Math.PI * 2, // sway 位相をばらす
-        zigDir: Math.random() < 0.5 ? -1 : 1,
+        swayT: gameRandom() * Math.PI * 2, // sway 位相をばらす
+        zigDir: gameRandom() < 0.5 ? -1 : 1,
         zigTimer: 0,
         fireInterval: fireInterval,
         shots: def.shots,
@@ -2732,7 +2814,7 @@
       ctx.lineJoin = 'round';
 
       // エンジン炎(下端・オレンジ・ちらつき)。機体本体より先に描いて下に潜らせる。
-      const flick = 0.7 + Math.random() * 0.5; // ちらつき係数
+      const flick = 0.7 + visualRandom() * 0.5; // ちらつき係数(演出のみ)
       ctx.save();
       ctx.globalAlpha = 0.85;
       ctx.fillStyle = '#ff9a30';
@@ -3043,7 +3125,7 @@
       const pool = isFirstUpgrade && firstUpgradeCandidates.length > 0
         ? firstUpgradeCandidates
         : candidates;
-      const pick = pool[Math.floor(Math.random() * pool.length)];
+      const pick = pool[Math.floor(gameRandom() * pool.length)];
       applyUpgrade(pick.id);
       gameState.upgradeCounts[pick.id]++;
       pushLevelUpText('LEVEL UP! ' + pick.label);
@@ -3109,7 +3191,7 @@
       const conf = LOOT_DROP_TABLE[enemyType];
       if (!conf) return;
       // ドロップ判定
-      if (Math.random() >= conf.drop) return;
+      if (gameRandom() >= conf.drop) return;
 
       const count = conf.count || 1;
       for (let i = 0; i < count; i++) {
@@ -3133,7 +3215,7 @@
      * @returns {string} 戦利品種('normal'|'large'|'boss')
      */
     function pickLootType(table) {
-      let r = Math.random();
+      let r = gameRandom();
       for (let i = 0; i < table.length; i++) {
         r -= table[i].p;
         if (r < 0) return table[i].type;
@@ -3246,12 +3328,23 @@
 
       // 送信状態 (§27/§28)
       document.getElementById('submit-status').textContent =
-        gameState.isRetired ? 'リタイアのため送信なし' : '';
+        gameState.isRetired ? 'リタイアのため送信なし' :
+        gameState.auditMode ? '監査モードのためランキング送信なし' : '';
 
-      // ベスト更新 (§26)。リタイアは記録対象外(送信もしないため)
+      // 監査モードでは、同じURLを開いたことを結果画面で確認できる。
+      const runInfoEl = document.getElementById('result-run-info');
+      if (gameState.auditMode && gameState.seed !== null) {
+        runInfoEl.textContent = '監査モード / seed: ' + gameState.seed;
+        runInfoEl.classList.add('visible');
+      } else {
+        runInfoEl.textContent = '';
+        runInfoEl.classList.remove('visible');
+      }
+
+      // ベスト更新 (§26)。監査モードとリタイアは通常の自己ベストへ反映しない。
       const bestEl = document.getElementById('result-best-update');
       bestEl.textContent = '';
-      if (!gameState.isRetired) {
+      if (!gameState.isRetired && !gameState.auditMode) {
         const rs = buildRankingScore();
         const prevBest = parseInt(localStorage.getItem(BEST_SCORE_KEY) || '0', 10) || 0;
         if (rs > prevBest) {
@@ -3305,6 +3398,7 @@
      */
     async function submitScore() {
       if (gameState.isRetired) return;
+      if (gameState.auditMode) return;
       if (gameState.scoreSent) return;
       gameState.scoreSent = true;   // 先にフラグを立てて再入・連打を防ぐ
 
