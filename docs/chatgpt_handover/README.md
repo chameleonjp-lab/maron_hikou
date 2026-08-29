@@ -19,6 +19,8 @@
 | 3 | [03_IMPLEMENTATION_PLAYBOOK.md](03_IMPLEMENTATION_PLAYBOOK.md) | 推奨改修を安全に実装する手順と受け入れ基準を確認する。 | 必須 |
 | 4 | [04_TEST_RELEASE_CHECKLIST.md](04_TEST_RELEASE_CHECKLIST.md) | ローカル・実機・ランキング連携の検証方法を確認する。 | 必須 |
 | 5 | [PR_REQUEST_DRAFT.md](PR_REQUEST_DRAFT.md) | 今回の申し送り追加をレビューへ回すためのPR下書きを使う。 | レビュー時 |
+| 6 | [06_BOSS_TELEGRAPH_20260829.md](06_BOSS_TELEGRAPH_20260829.md) | ボス攻撃予告の仕様と公平性判断を確認する。 | 改修時 |
+| 7 | [07_DETERMINISTIC_AUDIT_20260829.md](07_DETERMINISTIC_AUDIT_20260829.md) | 固定シード監査モードの使い方と制約を確認する。 | 改修時 |
 
 ## 変更してよいもの・変更前に守るもの
 
