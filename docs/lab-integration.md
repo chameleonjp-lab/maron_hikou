@@ -7,7 +7,7 @@
 ユーザー向けの実験場URL：
 
 ```text
-https://chameleonjp.codeberg.page/chameleonjp_lab/
+https://chameleonjp-lab.github.io/chameleonjp_lab/
 ```
 
 Codeberg側の公開元：
