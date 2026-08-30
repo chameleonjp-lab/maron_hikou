@@ -34,7 +34,7 @@
 - ゲーム開始(名前入力へ進む)
 - ルール説明(モーダル)
 - ゲームをシェア(Web Share API、不可ならコピー)
-- 実験場へ(https://chameleonjp.codeberg.page/chameleonjp_lab/)
+- 実験場へ(https://chameleonjp-lab.github.io/chameleonjp_lab/)
 
 ## 5. ゲーム画面
 
