@@ -66,7 +66,7 @@
 
 ## 検証・公開・復旧
 
-`python scripts/build-locales.py --check`、`node --test scripts/*.test.*`（22項目）、`python scripts/test-pages.py`（公開境界6項目）、`python scripts/prepare-pages.py`、`git diff --check`。`scripts/combat-fixture.json` は改修前39fdb3907b591a5dccb3806296c8d6db01052532の固定シードcommon-regressionから取得した30波設定/25強化の期待値で、改修後も完全一致。index.htmlとqueue原本一致を確認。
+`python scripts/build-locales.py --check`、`node --test scripts/*.test.*`（23項目）、`python scripts/test-pages.py`（公開境界6項目）、`python scripts/prepare-pages.py`、`git diff --check`。`scripts/combat-fixture.json` は改修前39fdb3907b591a5dccb3806296c8d6db01052532の固定シードcommon-regressionから取得した30波設定/25強化の期待値で、改修後も完全一致。index.htmlとqueue原本一致を確認。
 
 Chromium自動検証は全Supabaseを模擬し、本番書き込み0件。全15言語、402×874/874×402/375×667、ホーム/説明/X、初回カウント→実際の第1波・ポインター移動→被弾ゲームオーバー、ゲーム停止中の言語変更で状態不変、名前/IME/空白ゲスト、名固定・ACK紛失・reload同UUID、30行・同名・HTML安全・遅い旧応答・形式不正・失敗・空、名前ありリタイア/監査プレイの非送信・自己ベスト非更新、保存off/0を確認した。30波勝利の採点は制御したfixtureであり、30波の実攻略を実施したとはしない。
 
@@ -80,3 +80,5 @@ Chromium自動検証は全Supabaseを模擬し、本番書き込み0件。全15�
 既存DBのnormalized_name識別では同名別人を分離できず、改名の同一人継続も保証できない。既存記録を削除/移管せず、所有確認付き独立ID契約が必要。CodebergとGitHubのlocalStorageは別で自動継承しない。旧データを残し、本人のexport/importを型・キー・サイズ検証付きで行う移行UI案は未実装。保存拒否時はセッション内メモリだけで、reload保持を保証しない。
 
 復旧はrevert PRを同じ検証で配信する。古いActions再実行で最新を上書きせず、自己ベスト/名前/未送信UUIDを消さない。SQL撤回は依存ゲームを先に戻し、未送信記録を保管。URLは今回未変更。
+
+ACK検証追補: accepted=falseの明示的な拒否のみ再送対象外とする。null/空配列/欠落/文字列等の不正ACKは送信待ちへ戻し、reload後も同じUUIDで再試行する回帰テストを追加。
