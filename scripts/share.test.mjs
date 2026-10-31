@@ -9,9 +9,10 @@ assert.ok(helper,'The actual inline share helper must be present');
 function setup(open=()=>null,writeText=async()=>{}) {
   const nodes=new Map();
   for(const id of ['commonShareFallback','commonShareText','commonShareStatus','commonShareCopy','commonShareClose']) {
-    nodes.set(id,{value:'',textContent:'',open:false,events:{},addEventListener(name,cb){this.events[name]=cb;},showModal(){this.open=true;},close(){this.open=false;},focus(){},select(){this.selected=true;}});
+    nodes.set(id,{value:'',textContent:'',open:false,dataset:{},events:{},addEventListener(name,cb){this.events[name]=cb;},showModal(){this.open=true;},close(){this.open=false;},focus(){},select(){this.selected=true;}});
   }
-  const window={open};
+  const catalog=JSON.parse(html.match(/<script id="locale-catalogs" type="application\/json">([\s\S]*?)<\/script>/)[1]).ja;
+  const window={open,gameI18n:{text(node,key){node.textContent=catalog[key];node.dataset.i18n=key;}}};
   vm.runInNewContext(helper,{window,document:{getElementById:id=>nodes.get(id)},navigator:{clipboard:{writeText}},URL});
   return {window,nodes};
 }
