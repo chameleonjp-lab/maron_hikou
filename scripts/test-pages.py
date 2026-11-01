@@ -24,6 +24,10 @@ class PublicationBoundaryTests(unittest.TestCase):
     def build(self):
         with patch.object(module.subprocess, 'check_output', return_value='a'*40):
             module.validate_and_stage()
+    def test_git_trust_is_limited_to_this_checkout_for_container_uid(self):
+        with patch.object(module.subprocess, 'check_output', return_value='a'*40) as call:
+            module.validate_and_stage()
+        self.assertEqual(call.call_args.args[0], ['git','-c',f'safe.directory={self.root}','rev-parse','HEAD'])
     def test_only_explicit_runtime_files_are_published(self):
         (self.root / 'private.env').write_text('never publish')
         self.build()
