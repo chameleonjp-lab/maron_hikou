@@ -94,5 +94,6 @@
   "upgrade_collectrange": "Portée de ramassage accrue",
   "upgrade_hitreduce": "Zone de collision réduite",
   "shareDescription": "Un jeu de tir à défilement vertical : battez les ennemis, ramassez du butin et améliorez votre appareil au fil de 30 vagues.",
-  "shareResult": "{progress}\nScore : {score} points\nNiveau final : {level}"
+  "shareResult": "{progress}\nScore : {score} points\nNiveau final : {level}",
+  "storageFailed": "Cet appareil ne peut pas enregistrer le résultat. Pour ne pas le perdre, ne rechargez pas la page ; réessayez lorsque l’enregistrement sera possible."
 }

@@ -11,6 +11,8 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container: mcr.microsoft.com/playwright:v1.62.1-noble
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -22,8 +24,8 @@ jobs:
       - run: python scripts/build-locales.py --check
       - run: node --test scripts/*.test.*
       - run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.62.1
-      - run: npx --no-install playwright install --with-deps chromium
       - run: node scripts/browser-smoke.cjs
+      - run: BROWSER=webkit node scripts/browser-smoke.cjs
       - run: python scripts/test-pages.py
       - run: python scripts/prepare-pages.py
       - uses: actions/upload-pages-artifact@v3

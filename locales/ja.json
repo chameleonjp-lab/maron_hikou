@@ -94,5 +94,6 @@
   "upgrade_collectrange": "回収範囲アップ",
   "upgrade_hitreduce": "当たり判定縮小",
   "shareDescription": "敵を倒して戦利品を集め、機体を強化しながら30波突破を目指す縦スクロールシューティング。",
-  "shareResult": "{progress}\nスコア: {score}点\n最終レベル: {level}"
+  "shareResult": "{progress}\nスコア: {score}点\n最終レベル: {level}",
+  "storageFailed": "端末に記録を保存できません。結果を失わないため、再読み込みせず保存できる状態で再送してください。"
 }

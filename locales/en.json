@@ -94,5 +94,6 @@
   "upgrade_collectrange": "Wider collection range",
   "upgrade_hitreduce": "Smaller hitbox",
   "shareDescription": "Defeat enemies, collect loot, and upgrade your aircraft through 30 waves in this vertical scrolling shooter.",
-  "shareResult": "{progress}\nScore: {score} points\nFinal level: {level}"
+  "shareResult": "{progress}\nScore: {score} points\nFinal level: {level}",
+  "storageFailed": "This device cannot save the record. To avoid losing the result, do not reload; retry when saving is available."
 }

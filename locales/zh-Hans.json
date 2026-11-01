@@ -94,5 +94,6 @@
   "upgrade_collectrange": "扩大拾取范围",
   "upgrade_hitreduce": "缩小受击范围",
   "shareDescription": "击败敌人、收集战利品并强化飞机，在纵向卷轴射击游戏中挑战30波。",
-  "shareResult": "{progress}\n分数：{score}分\n最终等级：{level}"
+  "shareResult": "{progress}\n分数：{score}分\n最终等级：{level}",
+  "storageFailed": "此设备无法保存记录。为避免丢失结果，请勿刷新页面，待可保存时重试。"
 }

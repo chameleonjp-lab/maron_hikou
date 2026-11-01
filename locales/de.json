@@ -94,5 +94,6 @@
   "upgrade_collectrange": "Größerer Sammelradius",
   "upgrade_hitreduce": "Kleinere Trefferfläche",
   "shareDescription": "Ein vertikal scrollendes Schießspiel: Besiege Gegner, sammle Beute und verbessere dein Flugzeug über 30 Wellen.",
-  "shareResult": "{progress}\nPunktzahl: {score} Punkte\nEndstufe: {level}"
+  "shareResult": "{progress}\nPunktzahl: {score} Punkte\nEndstufe: {level}",
+  "storageFailed": "Dieses Gerät kann den Eintrag nicht speichern. Lade die Seite nicht neu, damit das Ergebnis erhalten bleibt. Versuche es erneut, sobald Speichern möglich ist."
 }

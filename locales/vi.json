@@ -94,5 +94,6 @@
   "upgrade_collectrange": "Tăng phạm vi thu nhặt",
   "upgrade_hitreduce": "Thu nhỏ vùng trúng đạn",
   "shareDescription": "Hạ kẻ địch, thu chiến lợi phẩm và nâng cấp máy bay qua 30 đợt trong trò bắn máy bay cuộn dọc này.",
-  "shareResult": "{progress}\nĐiểm: {score}\nCấp cuối cùng: {level}"
+  "shareResult": "{progress}\nĐiểm: {score}\nCấp cuối cùng: {level}",
+  "storageFailed": "Thiết bị này không thể lưu bản ghi. Để không mất kết quả, đừng tải lại trang; hãy thử lại khi có thể lưu."
 }

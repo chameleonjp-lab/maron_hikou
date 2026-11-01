@@ -94,5 +94,6 @@
   "upgrade_collectrange": "Jangkauan pengumpulan lebih luas",
   "upgrade_hitreduce": "Area terkena lebih kecil",
   "shareDescription": "Game tembak gulir vertikal: kalahkan musuh, kumpulkan jarahan, dan tingkatkan pesawat melewati 30 gelombang.",
-  "shareResult": "{progress}\nSkor: {score} poin\nLevel akhir: {level}"
+  "shareResult": "{progress}\nSkor: {score} poin\nLevel akhir: {level}",
+  "storageFailed": "Perangkat ini tidak dapat menyimpan catatan. Agar hasil tidak hilang, jangan muat ulang halaman; coba lagi saat penyimpanan tersedia."
 }

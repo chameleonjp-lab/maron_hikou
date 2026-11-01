@@ -94,5 +94,6 @@
   "upgrade_collectrange": "Mayor alcance de recogida",
   "upgrade_hitreduce": "Área vulnerable más pequeña",
   "shareDescription": "Un juego de disparos de desplazamiento vertical: derrota enemigos, recoge botín y mejora tu nave durante 30 oleadas.",
-  "shareResult": "{progress}\nPuntuación: {score} puntos\nNivel final: {level}"
+  "shareResult": "{progress}\nPuntuación: {score} puntos\nNivel final: {level}",
+  "storageFailed": "Este dispositivo no puede guardar el registro. Para no perder el resultado, no recargues; reintenta cuando se pueda guardar."
 }

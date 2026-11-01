@@ -94,5 +94,6 @@
   "upgrade_collectrange": "Maior alcance de coleta",
   "upgrade_hitreduce": "Área de acerto menor",
   "shareDescription": "Um jogo de tiro com rolagem vertical: derrote inimigos, colete espólios e melhore a aeronave ao longo de 30 ondas.",
-  "shareResult": "{progress}\nPontuação: {score} pontos\nNível final: {level}"
+  "shareResult": "{progress}\nPontuação: {score} pontos\nNível final: {level}",
+  "storageFailed": "Este dispositivo não consegue salvar o registro. Para não perder o resultado, não recarregue; tente novamente quando for possível salvar."
 }

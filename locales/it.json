@@ -94,5 +94,6 @@
   "upgrade_collectrange": "Raggio di raccolta aumentato",
   "upgrade_hitreduce": "Area colpibile ridotta",
   "shareDescription": "Uno sparatutto a scorrimento verticale: sconfiggi i nemici, raccogli bottino e potenzia il velivolo attraverso 30 ondate.",
-  "shareResult": "{progress}\nPunteggio: {score} punti\nLivello finale: {level}"
+  "shareResult": "{progress}\nPunteggio: {score} punti\nLivello finale: {level}",
+  "storageFailed": "Questo dispositivo non può salvare il record. Per non perdere il risultato, non ricaricare la pagina; riprova quando sarà possibile salvare."
 }

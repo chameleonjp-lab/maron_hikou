@@ -94,5 +94,6 @@
   "upgrade_collectrange": "Daha geniş toplama alanı",
   "upgrade_hitreduce": "Daha küçük isabet alanı",
   "shareDescription": "Düşmanları yenip ganimet topladığın, uçağını geliştirerek 30 dalgayı geçtiğin dikey kaydırmalı nişancı oyunu.",
-  "shareResult": "{progress}\nSkor: {score} puan\nSon seviye: {level}"
+  "shareResult": "{progress}\nSkor: {score} puan\nSon seviye: {level}",
+  "storageFailed": "Bu cihaz kaydı saklayamıyor. Sonucu kaybetmemek için sayfayı yenilemeyin; kayıt mümkün olduğunda yeniden deneyin."
 }

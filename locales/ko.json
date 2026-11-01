@@ -94,5 +94,6 @@
   "upgrade_collectrange": "수집 범위 증가",
   "upgrade_hitreduce": "피격 판정 축소",
   "shareDescription": "적을 물리치고 전리품을 모아 기체를 강화하며 30웨이브 돌파를 노리는 세로 스크롤 슈팅 게임.",
-  "shareResult": "{progress}\n점수: {score}점\n최종 레벨: {level}"
+  "shareResult": "{progress}\n점수: {score}점\n최종 레벨: {level}",
+  "storageFailed": "이 기기에 기록을 저장할 수 없습니다. 결과를 잃지 않도록 새로고침하지 말고, 저장할 수 있을 때 다시 시도하세요."
 }
