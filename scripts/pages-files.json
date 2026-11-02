@@ -1,6 +1,7 @@
 {
   "required": [
-    "index.html"
+    "index.html",
+    "assets/social-preview.png"
   ],
   "optional": []
 }

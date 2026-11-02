@@ -8,7 +8,15 @@
   <title data-i18n="gameTitle">マロン飛行</title>
 <link rel="canonical" href="https://chameleonjp.codeberg.page/maron_hikou/">
 <meta property="og:url" content="https://chameleonjp.codeberg.page/maron_hikou/">
-  <style>
+  <meta property="og:type" content="website">
+<meta property="og:image" content="https://chameleonjp-lab.github.io/maron_hikou/assets/social-preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="マロン飛行：実ゲームの機体、敵、栗の戦利品を夕焼けの空に配置した紹介画像">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://chameleonjp-lab.github.io/maron_hikou/assets/social-preview.png">
+<meta name="twitter:image:alt" content="マロン飛行：戦利品を拾って機体を強化する30ウェーブのシューティング">
+<style>
     /* ===== ベースリセット ===== */
     *, *::before, *::after {
       box-sizing: border-box;
@@ -3537,14 +3545,14 @@ button.common-x-share { background:#000 !important; color:#fff !important; borde
      * ゲーム紹介シェア文 (§29)
      */
     function getIntroShareText() {
-      return t('gameTitle')+'\n'+t('shareDescription')+'\n'+GAME_URL;
+      return t('gameTitle')+'\n'+t('shareDescription')+'\n#マロン飛行 #ゲーム制作\n'+GAME_URL;
     }
 
     /**
      * 結果シェア文 (§29)
      */
     function getResultShareText() {
-      return t('gameTitle')+'\n'+t('shareResult',{progress:progressToLabel(gameState.isCleared?31:gameState.wave),score:formatScore(gameState.score),level:gameState.level})+'\n'+GAME_URL;
+      return t('gameTitle')+'\n'+t('shareResult',{progress:progressToLabel(gameState.isCleared?31:gameState.wave),score:formatScore(gameState.score),level:gameState.level})+'\n#マロン飛行 #ゲーム制作\n'+GAME_URL;
     }
 
     // ===== ユーティリティ =====

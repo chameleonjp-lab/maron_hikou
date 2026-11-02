@@ -2,11 +2,11 @@ name: Validate and publish Pages
 on:
   pull_request:
   push:
-    branches: ["claude/optimistic-cori-5e5735"]
+    branches: ["claude/optimistic-cori-5e5735", "work/share-visibility-20261102"]
 permissions:
   contents: read
 concurrency:
-  group: pages-${{ github.event_name == 'pull_request' && github.ref || 'production' }}
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   validate:
@@ -26,10 +26,18 @@ jobs:
       - run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.62.1
       - run: node scripts/browser-smoke.cjs
       - run: BROWSER=webkit node scripts/browser-smoke.cjs
+      - run: node scripts/share-visual.cjs
+      - run: BROWSER_ENGINE=webkit node scripts/share-visual.cjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: share-visibility
+          path: test-artifacts/*.png
+          retention-days: 3
       - run: python scripts/test-pages.py
       - run: python scripts/prepare-pages.py
       - uses: actions/upload-pages-artifact@v3
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/claude/optimistic-cori-5e5735'
         with:
           path: _site
   deploy:
