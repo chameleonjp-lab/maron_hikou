@@ -4,3 +4,7 @@ CLAUDE.local.md
 .env.*
 secrets/
 .DS_Store
+_site/
+__pycache__/
+node_modules/
+package-lock.json

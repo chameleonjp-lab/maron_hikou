@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <title>マロン飛行</title>
+  <title data-i18n="gameTitle">マロン飛行</title>
+<link rel="canonical" href="https://chameleonjp.codeberg.page/maron_hikou/">
+<meta property="og:url" content="https://chameleonjp.codeberg.page/maron_hikou/">
   <style>
     /* ===== ベースリセット ===== */
     *, *::before, *::after {
@@ -689,7 +691,9 @@
       transform: translateX(-50%) translateY(0);
       opacity: 1;
     }
-  </style>
+
+.common-settings{display:grid;gap:8px;text-align:left}.common-settings input,.common-settings select{width:100%;min-height:44px;font:inherit}.common-settings select{background:#10263e;color:white;padding:8px}.common-settings p{font-size:14px;line-height:1.55}.btn,.common-ranking-link{white-space:normal;overflow-wrap:anywhere;height:auto;min-height:44px}.result-btn-row{flex-wrap:wrap}.result-btn-row>*{flex:1 1 130px;min-width:0}.home-title{overflow-wrap:anywhere;font-size:clamp(30px,10vw,44px)}.rank-name,.rank-result{overflow-wrap:anywhere;min-width:0}.ranking-item{grid-template-columns:42px minmax(0,1fr) minmax(0,1.2fr)}#player-name-input{user-select:text;-webkit-user-select:text}#soundVolume{padding:0}[hidden]{display:none!important}.btn-retire{min-height:44px;white-space:normal}#hud-wave{min-width:0;overflow-wrap:anywhere}.hud-wave{font-size:clamp(12px,3.5vw,16px)}
+</style>
 </head>
 <body>
 
@@ -699,34 +703,33 @@
   <div id="screen-home" class="screen">
     <div class="scroll-inner">
 
-      <div class="home-title">マロン飛行</div>
+      <div class="home-title" data-i18n="gameTitle">マロン飛行</div>
       <div class="home-plane-art">✈️</div>
 
-      <div class="home-subtitle">
+      <div class="home-subtitle" data-i18n="intro">
         戦利品を拾って機体を強化し、<br>30波突破を目指す
       </div>
 
       <div class="home-concepts">
-        <span class="concept-badge">🗡️ 敵を倒す</span>
-        <span class="concept-badge">🌰 戦利品で強化</span>
-        <span class="concept-badge">🏆 30波突破</span>
+        <span class="concept-badge" data-i18n="conceptFight">🗡️ 敵を倒す</span>
+        <span class="concept-badge" data-i18n="conceptLoot">🌰 戦利品で強化</span>
+        <span class="concept-badge" data-i18n="conceptClear">🏆 30波突破</span>
       </div>
 
       <div class="home-cloud-row">☁️ ☁️ ☁️</div>
 
-      <button class="btn btn-primary" id="btn-start">
+<div class="common-settings"><label for="languageSelect" data-i18n="language"></label><select id="languageSelect"></select><label for="player-name-input" data-i18n="nameTitle"></label><input id="player-name-input" autocomplete="nickname" enterkeyhint="done" aria-describedby="nameDisclosure" data-i18n="namePlaceholder" data-i18n-attr="placeholder"><p id="nameDisclosure" data-i18n="nameDisclosure"></p><p id="name-error" role="alert"></p><button id="soundToggle" class="btn btn-secondary" type="button"></button><label for="soundVolume" data-i18n="volume"></label><input id="soundVolume" type="range" min="0" max="1" step="0.05"><button id="pendingRetryBtn" class="btn btn-secondary" data-i18n="retrySend" hidden></button></div>
+      <button class="btn btn-primary" id="btn-start" data-i18n="start">
         🚀 ゲーム開始
       </button>
 
-      <button class="btn btn-secondary" id="btn-rules">
+      <button class="btn btn-secondary" id="btn-rules" data-i18n="rulesTitle">
         📖 ルール説明
       </button>
 
-      <button class="btn btn-secondary" id="btn-share-home">
-        🔗 ゲームをシェア
-      </button>
+      <button class="btn btn-secondary common-x-share" id="btn-share-home" data-i18n="shareX">Xでシェア</button><a data-i18n="ranking" class="common-ranking-link" href="https://chameleonjp-lab.github.io/chameleonjp_lab/ranking.html?game=maron_hikou">ランキング</a>
 
-      <a class="btn btn-outline" href="https://chameleonjp-lab.github.io/chameleonjp_lab/" target="_blank" rel="noopener noreferrer">
+      <a data-i18n="otherGames" class="btn btn-outline" href="https://chameleonjp-lab.github.io/chameleonjp_lab/" target="_blank" rel="noopener noreferrer">
         🧪 実験場へ
       </a>
 
@@ -738,82 +741,47 @@
   ======================================== -->
   <div id="rules-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="rules-modal-title">
     <div class="modal-box">
-      <div class="modal-title" id="rules-modal-title">📖 ゲームルール</div>
+      <div class="modal-title" id="rules-modal-title" data-i18n="rulesTitle">📖 ゲームルール</div>
       <div class="modal-body">
 
         <div class="rule-section">
-          <h3>🎯 目的</h3>
-          <p>敵を倒して戦利品を拾い、機体を強化しながら<strong>30波突破</strong>を目指してください。</p>
+          <h3 data-i18n="goalTitle">🎯 目的</h3>
+          <p data-i18n="goalRule">敵を倒して戦利品を拾い、機体を強化しながら<strong>30波突破</strong>を目指してください。</p>
         </div>
 
         <div class="rule-section">
-          <h3>🕹️ 操作</h3>
-          <p>画面をなぞると機体が動きます。ショットは<strong>自動発射</strong>です。</p>
-          <p>戦利品(🌰)に<strong>機体を近づける</strong>と回収できます。</p>
+          <h3 data-i18n="controlsTitle">🕹️ 操作</h3>
+          <p data-i18n="controlsRule">画面をなぞると機体が動きます。ショットは<strong>自動発射</strong>です。</p>
+          <p data-i18n="lootRule">戦利品(🌰)に<strong>機体を近づける</strong>と回収できます。</p>
         </div>
 
         <div class="rule-section">
-          <h3>⬆️ 強化</h3>
-          <p>戦利品を回収すると経験値が増え、レベルアップすると<strong>7種類の中からランダムに1つ強化</strong>されます。</p>
+          <h3 data-i18n="upgradesTitle">⬆️ 強化</h3>
+          <p data-i18n="upgradesRule">戦利品を回収すると経験値が増え、レベルアップすると<strong>7種類の中からランダムに1つ強化</strong>されます。</p>
         </div>
 
         <div class="rule-section">
-          <h3>👾 ウェーブ</h3>
-          <p>全30波。<strong>5波ごとにボス</strong>が出現します。30波のボスを倒すとクリアです。</p>
-          <p>ボスの<strong>赤い線と円</strong>は攻撃予告です。表示中に安全な位置へ移動してください。</p>
+          <h3 data-i18n="wavesTitle">👾 ウェーブ</h3>
+          <p data-i18n="wavesRule">全30波。<strong>5波ごとにボス</strong>が出現します。30波のボスを倒すとクリアです。</p>
+          <p data-i18n="telegraphRule">ボスの<strong>赤い線と円</strong>は攻撃予告です。表示中に安全な位置へ移動してください。</p>
         </div>
 
         <div class="rule-section">
-          <h3>🏳️ リタイアについて</h3>
-          <p>右上の「リタイア」ボタンから途中終了できますが、<strong>リタイア時はランキングに送信されません</strong>。</p>
+          <h3 data-i18n="retireTitle">🏳️ リタイアについて</h3>
+          <p data-i18n="retireRule">右上の「リタイア」ボタンから途中終了できますが、<strong>リタイア時はランキングに送信されません</strong>。</p>
         </div>
 
       </div>
-      <button class="btn btn-secondary modal-close" id="btn-rules-close">閉じる</button>
+      <button class="btn btn-secondary modal-close" id="btn-rules-close" data-i18n="close">閉じる</button>
     </div>
   </div>
 
   <!-- ========================================
        名前入力画面
   ======================================== -->
-  <div id="screen-name" class="screen">
-    <div class="scroll-inner">
-
-      <div class="name-header">パイロット名を入力</div>
-      <div class="name-desc">ランキングに表示される名前です。<br>絵文字もOK! 最大10文字</div>
-
-      <div class="name-input-wrap">
-        <label class="name-label" for="player-name-input">パイロット名</label>
-        <input
-          type="text"
-          id="player-name-input"
-          placeholder="例: マロン 🍀"
-          maxlength="10"
-          autocomplete="nickname"
-          autocorrect="off"
-          autocapitalize="off"
-          spellcheck="false"
-        >
-        <div class="name-error" id="name-error" role="alert" aria-live="polite"></div>
-      </div>
-
-      <button class="btn btn-primary" id="btn-name-start">
-        🚀 開始
-      </button>
-
-      <button class="btn btn-outline" id="btn-name-back">
-        ← ホームへ
-      </button>
-
-    </div>
-  </div>
-
-  <!-- ========================================
-       カウントダウン画面
-  ======================================== -->
   <div id="screen-countdown" class="screen">
     <div class="countdown-wrap">
-      <div class="countdown-ready">準備完了</div>
+      <div class="countdown-ready" data-i18n="ready">準備完了</div>
       <div id="countdown-number">3</div>
     </div>
   </div>
@@ -828,7 +796,7 @@
       <div class="hud-top">
         <div class="hud-wave" id="hud-wave">W1</div>
         <div class="hud-score" id="hud-score">0</div>
-        <button class="btn-retire" id="btn-retire">リタイア</button>
+        <button class="btn-retire" id="btn-retire" data-i18n="retire">リタイア</button>
       </div>
 
       <!-- HUD 下段 -->
@@ -842,7 +810,7 @@
       </div>
 
       <!-- キャンバス -->
-      <canvas id="game-canvas"></canvas>
+      <canvas id="game-canvas" role="img" data-i18n="gameAria" data-i18n-attr="aria-label"></canvas>
 
     </div>
   </div>
@@ -850,14 +818,14 @@
   <!-- リタイア確認モーダル -->
   <div id="retire-modal" class="modal-overlay" role="dialog" aria-modal="true">
     <div class="modal-box">
-      <div class="modal-title">🏳️ リタイアしますか?</div>
-      <div class="retire-modal-text">
+      <div class="modal-title" data-i18n="retireQuestion">🏳️ リタイアしますか?</div>
+      <div class="retire-modal-text" data-i18n="retireWarning">
         このプレイは<strong>ランキングに送信されません</strong>。<br>
         本当にリタイアしますか?
       </div>
       <div class="retire-btn-group">
-        <button class="btn btn-secondary" id="btn-retire-cancel">キャンセル</button>
-        <button class="btn btn-danger" id="btn-retire-ok">リタイア</button>
+        <button class="btn btn-secondary" id="btn-retire-cancel" data-i18n="cancel">キャンセル</button>
+        <button class="btn btn-danger" id="btn-retire-ok" data-i18n="retire">リタイア</button>
       </div>
     </div>
   </div>
@@ -871,7 +839,7 @@
       <div class="result-title" id="result-title">ゲームオーバー</div>
 
       <div class="result-wave-display">
-        <span class="wave-label">到達</span>
+        <span class="wave-label" data-i18n="reached">到達</span>
         <span id="result-wave-text">17波到達</span>
       </div>
 
@@ -881,46 +849,46 @@
 
       <div class="result-stats">
         <div class="stat-item">
-          <div class="stat-label">最終Lv</div>
+          <div class="stat-label" data-i18n="finalLevel">最終Lv</div>
           <div class="stat-value" id="result-lv">Lv.8</div>
         </div>
         <div class="stat-item">
-          <div class="stat-label">撃破数</div>
+          <div class="stat-label" data-i18n="kills">撃破数</div>
           <div class="stat-value" id="result-kills">123機</div>
         </div>
         <div class="stat-item">
-          <div class="stat-label">戦利品</div>
+          <div class="stat-label" data-i18n="loot">戦利品</div>
           <div class="stat-value" id="result-loots">56個</div>
         </div>
         <div class="stat-item">
-          <div class="stat-label">逃走</div>
+          <div class="stat-label" data-i18n="escaped">逃走</div>
           <div class="stat-value" id="result-escaped">0機</div>
         </div>
         <div class="stat-item">
-          <div class="stat-label">未回収</div>
+          <div class="stat-label" data-i18n="lootLost">未回収</div>
           <div class="stat-value" id="result-loot-lost">0個</div>
         </div>
       </div>
 
-      <div class="result-submit-status" id="submit-status">---</div>
+      <div class="result-submit-status" id="submit-status">---</div><button id="retrySendBtn" class="btn btn-secondary" type="button" data-i18n="retrySend" hidden></button>
       <div class="result-run-info" id="result-run-info"></div>
       <div class="result-best-update" id="result-best-update"></div>
 
       <div class="result-btn-group">
-        <button class="btn btn-primary" id="btn-retry">🔄 もう一度</button>
+        <button class="btn btn-primary" id="btn-retry" data-i18n="retry">🔄 もう一度</button>
         <div class="result-btn-row">
-          <button class="btn btn-secondary" id="btn-share-result">🔗 結果をシェア</button>
-          <button class="btn btn-secondary" id="btn-home">🏠 ホームへ</button>
+          <button class="btn btn-secondary common-x-share" id="btn-share-result" data-i18n="shareX">Xでシェア</button><a data-i18n="ranking" class="common-ranking-link" href="https://chameleonjp-lab.github.io/chameleonjp_lab/ranking.html?game=maron_hikou">ランキング</a>
+          <button class="btn btn-secondary" id="btn-home" data-i18n="home">🏠 ホームへ</button>
         </div>
-        <a class="btn btn-outline" href="https://chameleonjp-lab.github.io/chameleonjp_lab/" target="_blank" rel="noopener noreferrer">
+        <a data-i18n="otherGames" class="btn btn-outline" href="https://chameleonjp-lab.github.io/chameleonjp_lab/" target="_blank" rel="noopener noreferrer">
           🧪 実験場へ
         </a>
       </div>
 
       <!-- ランキング -->
       <div class="ranking-section">
-        <div class="ranking-title">🏆 ランキング (上位10件)</div>
-        <div id="ranking-list">
+        <div class="ranking-title" data-i18n="rankingTop30">🏆 ランキング (上位30名)</div>
+        <p id="rankingReadStatus" role="status"></p><button id="retryRankingBtn" class="btn btn-secondary" type="button" data-i18n="retryRanking"></button><div id="ranking-list">
           <div class="ranking-loading">読み込み中...</div>
         </div>
       </div>
@@ -931,11 +899,226 @@
   <!-- コピー成功トースト -->
   <div id="toast"></div>
 
-  <script>
+  <style>
+button.common-x-share { background:#000 !important; color:#fff !important; border:1px solid #555; white-space:normal; overflow-wrap:anywhere; min-height:44px; padding:12px 16px; line-height:1.4; }
+.common-ranking-link { display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; min-height:44px; padding:12px 16px; border:1px solid currentColor; border-radius:10px; color:inherit; text-decoration:none; white-space:normal; overflow-wrap:anywhere; line-height:1.4; }
+#commonShareFallback { box-sizing:border-box; width:min(92vw,32rem); max-height:85dvh; overflow:auto; border:1px solid #777; border-radius:12px; padding:20px; background:#fff; color:#111; }
+#commonShareFallback::backdrop { background:#0009; }
+#commonShareFallback textarea { box-sizing:border-box; width:100%; min-height:160px; padding:10px; font:16px/1.5 sans-serif; color:#111; background:#fff; user-select:text; -webkit-user-select:text; }
+#commonShareFallback button { min-height:44px; margin:6px; padding:10px 16px; white-space:normal; color:#fff; background:#222; }
+</style>
+<dialog id="commonShareFallback" aria-labelledby="commonShareHeading">
+  <h2 id="commonShareHeading" data-i18n="copyHeading">共有文をコピー</h2>
+  <p data-i18n="copyHelp">Xを開けない場合は、本文とURLをコピーして投稿できます。</p>
+  <textarea id="commonShareText" data-i18n="copyTextAria" data-i18n-attr="aria-label" readonly aria-label="共有する本文とURL"></textarea>
+  <p id="commonShareStatus" role="status" aria-live="polite"></p>
+  <button id="commonShareCopy" data-i18n="copy" type="button">コピー</button>
+  <button id="commonShareClose" data-i18n="close" type="button">閉じる</button>
+</dialog>
+<script id="locale-catalogs" type="application/json">{"ja":{"language":"言語","start":"ゲームスタート","shareX":"Xでシェア","ranking":"ランキング","otherGames":"他のゲームで遊ぶ","retire":"リタイア","retry":"もう一度プレイ","finish":"ゲーム終了","back":"戻る","copyHeading":"共有文をコピー","copyHelp":"Xを開けない場合は、本文とURLをコピーして投稿できます。","copyTextAria":"共有する本文とURL","copy":"コピー","close":"閉じる","copied":"コピーしました。投稿はXで確認してください。","copyManual":"本文を選択して手動でコピーしてください。","clipboardCopied":"クリップボードにコピーしました","copyFailed":"コピーできませんでした","rankingUnavailable":"ランキングは現在利用できません。今回の結果は画面に残ります。","rankingSending":"ランキング送信中…","rankingSendFailed":"ランキング送信に失敗しました。今回の結果は画面に残ります。","rankingLoading":"ランキング取得中…","rankingSent":"ランキングに反映しました","rankingLoaded":"ランキングを取得しました","rankingLoadFailed":"ランキング取得に失敗しました。結果表示はそのまま残ります。","unnamed":"名無し","noRecords":"まだ記録がありません","nameDisclosure":"名前を入力すると、名前と記録がランキングに公開されます。空欄でも遊べます。","retrySend":"記録の送信を再試行","retryRanking":"ランキングを再取得","guestResult":"名前なしのプレイです。記録は公開しません。","scorePending":"記録は送信待ちです。通信回復時に同じ記録を再送します。","soundOn":"効果音：オン","soundOff":"効果音：オフ","volume":"音量","nameTitle":"名前（任意・10文字まで）","namePlaceholder":"10文字まで","nameTooLong":"名前は10文字以内にしてください。","nameAria":"プレイヤー名","home":"ホームへ戻る","rulesTitle":"ルール説明","gameAria":"ゲーム画面","points":"{score}点","rankingTop30":"ランキング 上位30名","rank":"{rank}位","waveEffect":"第{wave}波","gameTitle":"マロン飛行","intro":"戦利品を拾って機体を強化し、30波突破を目指す","conceptFight":"🗡️ 敵を倒す","conceptLoot":"🌰 戦利品で強化","conceptClear":"🏆 30波突破","goalTitle":"🎯 目的","goalRule":"敵を倒して戦利品を拾い、機体を強化しながら30波突破を目指してください。","controlsTitle":"🕹️ 操作","controlsRule":"画面をなぞると機体が動きます。ショットは自動発射です。","lootRule":"戦利品（🌰）に機体を近づけると回収できます。","upgradesTitle":"⬆️ 強化","upgradesRule":"戦利品で経験値が増え、レベルアップすると7種類の強化から1つがランダムに付きます。上限の強化は除き、最初の強化は攻撃系です。","wavesTitle":"👾 ウェーブ","wavesRule":"全30波。5波ごとにボスが出現します。30波のボスを倒すとクリアです。","telegraphRule":"ボスの赤い線と円は攻撃予告です。表示中に安全な位置へ移動してください。","retireTitle":"🏳️ リタイアについて","retireRule":"右上の「リタイア」で途中終了できます。リタイア時はランキングに送信されません。","ready":"準備完了","go":"スタート！","retireQuestion":"🏳️ リタイアしますか？","retireWarning":"このプレイはランキングに送信されません。リタイアしますか？","cancel":"キャンセル","clearTitle":"🎉 クリア！","retiredTitle":"🏳️ リタイア","gameOver":"💥 ゲームオーバー","reached":"到達","clearProgress":"30波クリア","waveProgress":"{wave}波到達","finalLevel":"最終レベル","kills":"撃破数","loot":"戦利品","escaped":"逃走","lootLost":"未回収","retiredExcluded":"リタイアのため送信なし","auditExcluded":"監査モードのためランキング送信なし","auditInfo":"監査モード / seed: {seed}","bestUpdated":"🏅 最高到達更新！","boss":"ボス","bossWarning":"⚠ ボス出現 ⚠","bonus":"スコアボーナス +1,000","levelUp":"レベルアップ！ {upgrade}","upgrade_bullet":"弾数+1","upgrade_firerate":"連射速度アップ","upgrade_piercing":"貫通弾","upgrade_shield":"シールド+1","upgrade_maxhp":"最大耐久+1","upgrade_collectrange":"回収範囲アップ","upgrade_hitreduce":"当たり判定縮小","shareDescription":"敵を倒して戦利品を集め、機体を強化しながら30波突破を目指す縦スクロールシューティング。","shareResult":"{progress}\nスコア: {score}点\n最終レベル: {level}","storageFailed":"端末に記録を保存できません。結果を失わないため、再読み込みせず保存できる状態で再送してください。"},"en":{"language":"Language","start":"Start game","shareX":"Share on X","ranking":"Rankings","otherGames":"Play other games","retire":"Retire","retry":"Play again","finish":"Back to home","back":"Back","copyHeading":"Copy share text","copyHelp":"If X does not open, copy the text and URL to create your post.","copyTextAria":"Text and URL to share","copy":"Copy","close":"Close","copied":"Copied. Review and publish your post on X.","copyManual":"Select the text and copy it manually.","clipboardCopied":"Copied to clipboard","copyFailed":"Could not copy","rankingUnavailable":"Rankings are currently unavailable. Your result remains on screen.","rankingSending":"Submitting score…","rankingSendFailed":"Could not submit your score. Your result remains on screen.","rankingLoading":"Loading rankings…","rankingSent":"Score submitted","rankingLoaded":"Rankings loaded","rankingLoadFailed":"Could not load rankings. Your result remains on screen.","unnamed":"Unnamed","noRecords":"No records yet","nameDisclosure":"If you enter a name, your name and score will be public in the rankings. You can play with this blank.","retrySend":"Retry score submission","retryRanking":"Reload rankings","guestResult":"You played without a name. This score will not be public.","scorePending":"Your score is pending. The same result will be retried when the connection returns.","soundOn":"Sound: on","soundOff":"Sound: off","volume":"Volume","nameTitle":"Name (optional, up to 10 characters)","namePlaceholder":"Up to 10 characters","nameTooLong":"Use no more than 10 characters.","nameAria":"Player name","home":"Back to home","rulesTitle":"How to play","gameAria":"Game field","points":"{score} points","rankingTop30":"Top 30 players","rank":"#{rank}","waveEffect":"Wave {wave}","gameTitle":"Maron Flight","intro":"Collect loot to upgrade your aircraft and clear all 30 waves.","conceptFight":"🗡️ Defeat enemies","conceptLoot":"🌰 Upgrade with loot","conceptClear":"🏆 Clear 30 waves","goalTitle":"🎯 Goal","goalRule":"Defeat enemies, collect loot, and upgrade your aircraft to clear all 30 waves.","controlsTitle":"🕹️ Controls","controlsRule":"Drag on the screen to move your aircraft. It fires automatically.","lootRule":"Move your aircraft close to loot (🌰) to collect it.","upgradesTitle":"⬆️ Upgrades","upgradesRule":"Loot grants experience. Each level grants one random upgrade from 7 types, excluding those at their cap. Your first upgrade is an attack upgrade.","wavesTitle":"👾 Waves","wavesRule":"There are 30 waves, with a boss every 5 waves. Defeat the wave 30 boss to clear the game.","telegraphRule":"A boss’s red lines and circles warn of incoming attacks. Move to safety while they are visible.","retireTitle":"🏳️ Retiring","retireRule":"Use Retire in the upper right to end your run. Retired runs are not submitted to the rankings.","ready":"Ready","go":"Go!","retireQuestion":"🏳️ Retire?","retireWarning":"This run will not be submitted to the rankings. Retire now?","cancel":"Cancel","clearTitle":"🎉 Cleared!","retiredTitle":"🏳️ Retired","gameOver":"💥 Game over","reached":"Progress","clearProgress":"30 waves cleared","waveProgress":"Wave {wave} reached","finalLevel":"Final level","kills":"Enemies defeated","loot":"Loot collected","escaped":"Enemies escaped","lootLost":"Loot missed","retiredExcluded":"Retired run: no score submitted","auditExcluded":"Audit mode: no ranking submission","auditInfo":"Audit mode / seed: {seed}","bestUpdated":"🏅 New personal best!","boss":"Boss","bossWarning":"⚠ Boss approaching ⚠","bonus":"Score bonus +1,000","levelUp":"Level up! {upgrade}","upgrade_bullet":"+1 projectile","upgrade_firerate":"Faster fire rate","upgrade_piercing":"Piercing shots","upgrade_shield":"+1 shield","upgrade_maxhp":"+1 maximum HP","upgrade_collectrange":"Wider collection range","upgrade_hitreduce":"Smaller hitbox","shareDescription":"Defeat enemies, collect loot, and upgrade your aircraft through 30 waves in this vertical scrolling shooter.","shareResult":"{progress}\nScore: {score} points\nFinal level: {level}","storageFailed":"This device cannot save the record. To avoid losing the result, do not reload; retry when saving is available."},"es":{"language":"Idioma","start":"Empezar partida","shareX":"Compartir en X","ranking":"Clasificación","otherGames":"Jugar a otros juegos","retire":"Abandonar","retry":"Volver a jugar","finish":"Volver al inicio","back":"Volver","copyHeading":"Copiar el texto para compartir","copyHelp":"Si X no se abre, copia el texto y la URL para crear tu publicación.","copyTextAria":"Texto y URL para compartir","copy":"Copiar","close":"Cerrar","copied":"Copiado. Revisa y publica tu mensaje en X.","copyManual":"Selecciona el texto y cópialo manualmente.","clipboardCopied":"Copiado al portapapeles","copyFailed":"No se pudo copiar","rankingUnavailable":"La clasificación no está disponible. Tu resultado sigue en pantalla.","rankingSending":"Enviando el resultado…","rankingSendFailed":"No se pudo enviar el resultado. Sigue en pantalla.","rankingLoading":"Cargando la clasificación…","rankingSent":"Resultado enviado","rankingLoaded":"Clasificación cargada","rankingLoadFailed":"No se pudo cargar la clasificación. Tu resultado sigue en pantalla.","unnamed":"Sin nombre","noRecords":"Todavía no hay registros","nameDisclosure":"Si introduces un nombre, tu nombre y puntuación serán públicos en la clasificación. Puedes jugar sin escribirlo.","retrySend":"Reintentar envío","retryRanking":"Recargar clasificación","guestResult":"Has jugado sin nombre. Esta puntuación no se publicará.","scorePending":"Tu puntuación está pendiente. Se reenviará el mismo resultado cuando vuelva la conexión.","soundOn":"Sonido: activado","soundOff":"Sonido: desactivado","volume":"Volumen","nameTitle":"Nombre (opcional, hasta 10 caracteres)","namePlaceholder":"Hasta 10 caracteres","nameTooLong":"El nombre debe tener 10 caracteres como máximo.","nameAria":"Nombre del jugador","home":"Volver al inicio","rulesTitle":"Reglas","gameAria":"Campo de juego","points":"{score} puntos","rankingTop30":"Los 30 mejores jugadores","rank":"Puesto {rank}","waveEffect":"Oleada {wave}","gameTitle":"Vuelo de Maron","intro":"Recoge botín, mejora tu nave y supera las 30 oleadas","conceptFight":"🗡️ Derrota enemigos","conceptLoot":"🌰 Mejora con botín","conceptClear":"🏆 Supera 30 oleadas","goalTitle":"🎯 Objetivo","goalRule":"Derrota enemigos, recoge botín y mejora tu nave para superar las 30 oleadas.","controlsTitle":"🕹️ Controles","controlsRule":"Arrastra por la pantalla para mover la nave. Dispara automáticamente.","lootRule":"Acerca la nave al botín (🌰) para recogerlo.","upgradesTitle":"⬆️ Mejoras","upgradesRule":"El botín da experiencia. Cada nivel otorga 1 mejora aleatoria de 7 tipos, excluyendo las que alcanzaron su límite. La primera mejora es de ataque.","wavesTitle":"👾 Oleadas","wavesRule":"Hay 30 oleadas y un jefe cada 5. Derrota al jefe de la oleada 30 para completar el juego.","telegraphRule":"Las líneas y círculos rojos del jefe avisan de ataques. Muévete a un lugar seguro mientras estén visibles.","retireTitle":"🏳️ Abandonar la partida","retireRule":"Usa «Abandonar» arriba a la derecha para terminar antes de tiempo. Las partidas abandonadas no se envían a la clasificación.","ready":"Listo","go":"¡Vamos!","retireQuestion":"🏳️ ¿Abandonar?","retireWarning":"Esta partida no se enviará a la clasificación. ¿Abandonar ahora?","cancel":"Cancelar","clearTitle":"🎉 ¡Completado!","retiredTitle":"🏳️ Abandono","gameOver":"💥 Fin del juego","reached":"Progreso","clearProgress":"30 oleadas superadas","waveProgress":"Oleada {wave} alcanzada","finalLevel":"Nivel final","kills":"Enemigos derrotados","loot":"Botín recogido","escaped":"Enemigos escapados","lootLost":"Botín perdido","retiredExcluded":"Partida abandonada: sin envío","auditExcluded":"Modo de auditoría: sin envío a la clasificación","auditInfo":"Modo de auditoría / seed: {seed}","bestUpdated":"🏅 ¡Nuevo récord personal!","boss":"Jefe","bossWarning":"⚠ Se acerca un jefe ⚠","bonus":"Bonificación de puntos +1,000","levelUp":"¡Subes de nivel! {upgrade}","upgrade_bullet":"+1 proyectil","upgrade_firerate":"Disparo más rápido","upgrade_piercing":"Disparos perforantes","upgrade_shield":"+1 escudo","upgrade_maxhp":"+1 de salud máxima","upgrade_collectrange":"Mayor alcance de recogida","upgrade_hitreduce":"Área vulnerable más pequeña","shareDescription":"Un juego de disparos de desplazamiento vertical: derrota enemigos, recoge botín y mejora tu nave durante 30 oleadas.","shareResult":"{progress}\nPuntuación: {score} puntos\nNivel final: {level}","storageFailed":"Este dispositivo no puede guardar el registro. Para no perder el resultado, no recargues; reintenta cuando se pueda guardar."},"pt-BR":{"language":"Idioma","start":"Começar partida","shareX":"Compartilhar no X","ranking":"Ranking","otherGames":"Jogar outros jogos","retire":"Desistir","retry":"Jogar de novo","finish":"Voltar ao início","back":"Voltar","copyHeading":"Copiar o texto para compartilhar","copyHelp":"Se o X não abrir, copie o texto e a URL para criar sua publicação.","copyTextAria":"Texto e URL para compartilhar","copy":"Copiar","close":"Fechar","copied":"Copiado. Revise e publique sua mensagem no X.","copyManual":"Selecione o texto e copie manualmente.","clipboardCopied":"Copiado para a área de transferência","copyFailed":"Não foi possível copiar","rankingUnavailable":"O ranking está indisponível. Seu resultado continua na tela.","rankingSending":"Enviando resultado…","rankingSendFailed":"Não foi possível enviar o resultado. Ele continua na tela.","rankingLoading":"Carregando o ranking…","rankingSent":"Resultado enviado","rankingLoaded":"Ranking carregado","rankingLoadFailed":"Não foi possível carregar o ranking. Seu resultado continua na tela.","unnamed":"Sem nome","noRecords":"Ainda não há registros","nameDisclosure":"Se informar um nome, seu nome e sua pontuação ficarão públicos no ranking. Você pode jogar deixando o campo vazio.","retrySend":"Tentar enviar novamente","retryRanking":"Recarregar ranking","guestResult":"Você jogou sem nome. Esta pontuação não será publicada.","scorePending":"Sua pontuação está pendente. O mesmo resultado será reenviado quando a conexão voltar.","soundOn":"Som: ligado","soundOff":"Som: desligado","volume":"Volume","nameTitle":"Nome (opcional, até 10 caracteres)","namePlaceholder":"Até 10 caracteres","nameTooLong":"O nome deve ter no máximo 10 caracteres.","nameAria":"Nome do jogador","home":"Voltar ao início","rulesTitle":"Regras","gameAria":"Área de jogo","points":"{score} pontos","rankingTop30":"Os 30 melhores jogadores","rank":"Posição {rank}","waveEffect":"Onda {wave}","gameTitle":"Voo de Maron","intro":"Colete espólios, melhore sua aeronave e supere 30 ondas","conceptFight":"🗡️ Derrote inimigos","conceptLoot":"🌰 Melhore com espólios","conceptClear":"🏆 Supere 30 ondas","goalTitle":"🎯 Objetivo","goalRule":"Derrote inimigos, colete espólios e melhore sua aeronave para superar as 30 ondas.","controlsTitle":"🕹️ Controles","controlsRule":"Arraste na tela para mover a aeronave. Os disparos são automáticos.","lootRule":"Aproxime a aeronave dos espólios (🌰) para coletá-los.","upgradesTitle":"⬆️ Melhorias","upgradesRule":"Os espólios dão experiência. Cada nível concede 1 melhoria aleatória entre 7 tipos, exceto os que já atingiram o limite. A primeira melhoria é de ataque.","wavesTitle":"👾 Ondas","wavesRule":"São 30 ondas, com um chefe a cada 5. Derrote o chefe da onda 30 para concluir o jogo.","telegraphRule":"As linhas e os círculos vermelhos do chefe avisam sobre ataques. Vá para um local seguro enquanto estiverem visíveis.","retireTitle":"🏳️ Desistência","retireRule":"Use “Desistir” no canto superior direito para encerrar a partida. Partidas abandonadas não são enviadas ao ranking.","ready":"Pronto","go":"Vai!","retireQuestion":"🏳️ Desistir?","retireWarning":"Esta partida não será enviada ao ranking. Desistir agora?","cancel":"Cancelar","clearTitle":"🎉 Concluído!","retiredTitle":"🏳️ Desistência","gameOver":"💥 Fim de jogo","reached":"Progresso","clearProgress":"30 ondas superadas","waveProgress":"Onda {wave} alcançada","finalLevel":"Nível final","kills":"Inimigos derrotados","loot":"Espólios coletados","escaped":"Inimigos que escaparam","lootLost":"Espólios perdidos","retiredExcluded":"Desistência: resultado não enviado","auditExcluded":"Modo de auditoria: sem envio ao ranking","auditInfo":"Modo de auditoria / seed: {seed}","bestUpdated":"🏅 Novo recorde pessoal!","boss":"Chefe","bossWarning":"⚠ Chefe se aproximando ⚠","bonus":"Bônus de pontuação +1,000","levelUp":"Subiu de nível! {upgrade}","upgrade_bullet":"+1 projétil","upgrade_firerate":"Disparos mais rápidos","upgrade_piercing":"Tiros perfurantes","upgrade_shield":"+1 escudo","upgrade_maxhp":"+1 vida máxima","upgrade_collectrange":"Maior alcance de coleta","upgrade_hitreduce":"Área de acerto menor","shareDescription":"Um jogo de tiro com rolagem vertical: derrote inimigos, colete espólios e melhore a aeronave ao longo de 30 ondas.","shareResult":"{progress}\nPontuação: {score} pontos\nNível final: {level}","storageFailed":"Este dispositivo não consegue salvar o registro. Para não perder o resultado, não recarregue; tente novamente quando for possível salvar."},"zh-Hans":{"language":"语言","start":"开始游戏","shareX":"分享到X","ranking":"排行榜","otherGames":"玩其他游戏","retire":"退出本局","retry":"再玩一次","finish":"返回主页","back":"返回","copyHeading":"复制分享内容","copyHelp":"如果无法打开X，可以复制文字和链接后自行发布。","copyTextAria":"要分享的文字和链接","copy":"复制","close":"关闭","copied":"已复制。请在X确认并发布。","copyManual":"请选中文字并手动复制。","clipboardCopied":"已复制到剪贴板","copyFailed":"复制失败","rankingUnavailable":"排行榜暂时不可用。本次结果仍保留在屏幕上。","rankingSending":"正在提交成绩…","rankingSendFailed":"成绩提交失败。本次结果仍保留在屏幕上。","rankingLoading":"正在加载排行榜…","rankingSent":"成绩已提交","rankingLoaded":"排行榜已加载","rankingLoadFailed":"排行榜加载失败。本次结果仍保留在屏幕上。","unnamed":"未命名","noRecords":"暂无记录","nameDisclosure":"输入名称后，你的名称和成绩将显示在公开排行榜中。也可以留空游玩。","retrySend":"重试提交成绩","retryRanking":"重新加载排行榜","guestResult":"本局未填写名称，不会公开成绩。","scorePending":"成绩等待提交。网络恢复后将重试提交同一结果。","soundOn":"音效：开","soundOff":"音效：关","volume":"音量","nameTitle":"名称（选填，最多10个字符）","namePlaceholder":"最多10个字符","nameTooLong":"名称不能超过10个字符。","nameAria":"玩家名称","home":"返回主页","rulesTitle":"玩法说明","gameAria":"游戏区域","points":"{score}分","rankingTop30":"排行榜前30名","rank":"第{rank}名","waveEffect":"第{wave}波","gameTitle":"栗子飞行","intro":"收集战利品，强化飞机，挑战全部30波。","conceptFight":"🗡️ 击败敌人","conceptLoot":"🌰 战利品强化","conceptClear":"🏆 突破30波","goalTitle":"🎯 目标","goalRule":"击败敌人并收集战利品，强化飞机，突破全部30波。","controlsTitle":"🕹️ 操作","controlsRule":"在屏幕上拖动即可移动飞机。飞机会自动射击。","lootRule":"靠近战利品（🌰）即可拾取。","upgradesTitle":"⬆️ 强化","upgradesRule":"拾取战利品可获得经验。每次升级随机获得7种强化中的一种，已达上限的强化除外。第一次强化必定是攻击类。","wavesTitle":"👾 波次","wavesRule":"共30波，每5波出现一个首领。击败第30波的首领即可通关。","telegraphRule":"首领的红线和红圈是攻击预警。请在显示预警时移到安全位置。","retireTitle":"🏳️ 关于退出","retireRule":"点击右上角的“退出”可提前结束。本次退出的成绩不会提交到排行榜。","ready":"准备就绪","go":"开始！","retireQuestion":"🏳️ 要退出吗？","retireWarning":"本次成绩不会提交到排行榜。确定退出吗？","cancel":"取消","clearTitle":"🎉 通关！","retiredTitle":"🏳️ 已退出","gameOver":"💥 游戏结束","reached":"进度","clearProgress":"通关30波","waveProgress":"到达第{wave}波","finalLevel":"最终等级","kills":"击败敌人数","loot":"拾取战利品","escaped":"逃脱敌人数","lootLost":"未拾取战利品","retiredExcluded":"已退出：不提交成绩","auditExcluded":"审计模式：不提交排行榜","auditInfo":"审计模式 / seed: {seed}","bestUpdated":"🏅 刷新个人最佳！","boss":"首领","bossWarning":"⚠ 首领来袭 ⚠","bonus":"分数奖励 +1,000","levelUp":"升级！{upgrade}","upgrade_bullet":"弹数+1","upgrade_firerate":"提高射速","upgrade_piercing":"穿透弹","upgrade_shield":"护盾+1","upgrade_maxhp":"最大耐久+1","upgrade_collectrange":"扩大拾取范围","upgrade_hitreduce":"缩小受击范围","shareDescription":"击败敌人、收集战利品并强化飞机，在纵向卷轴射击游戏中挑战30波。","shareResult":"{progress}\n分数：{score}分\n最终等级：{level}","storageFailed":"此设备无法保存记录。为避免丢失结果，请勿刷新页面，待可保存时重试。"},"fr":{"language":"Langue","start":"Commencer la partie","shareX":"Partager sur X","ranking":"Classement","otherGames":"Jouer à d'autres jeux","retire":"Abandonner","retry":"Rejouer","finish":"Retour à l'accueil","back":"Retour","copyHeading":"Copier le texte à partager","copyHelp":"Si X ne s'ouvre pas, copiez le texte et l'URL pour créer votre publication.","copyTextAria":"Texte et URL à partager","copy":"Copier","close":"Fermer","copied":"Copié. Vérifiez puis publiez votre message sur X.","copyManual":"Sélectionnez le texte et copiez-le manuellement.","clipboardCopied":"Copié dans le presse-papiers","copyFailed":"Impossible de copier","rankingUnavailable":"Le classement est indisponible. Votre résultat reste à l'écran.","rankingSending":"Envoi du résultat…","rankingSendFailed":"Impossible d'envoyer le résultat. Il reste à l'écran.","rankingLoading":"Chargement du classement…","rankingSent":"Résultat envoyé","rankingLoaded":"Classement chargé","rankingLoadFailed":"Impossible de charger le classement. Votre résultat reste à l'écran.","unnamed":"Sans nom","noRecords":"Aucun résultat pour le moment","nameDisclosure":"Si vous saisissez un nom, votre nom et votre score seront publics dans le classement. Vous pouvez jouer en laissant ce champ vide.","retrySend":"Réessayer l’envoi","retryRanking":"Recharger le classement","guestResult":"Vous avez joué sans nom. Ce score ne sera pas publié.","scorePending":"Votre score est en attente. Le même résultat sera renvoyé au retour de la connexion.","soundOn":"Son : activé","soundOff":"Son : désactivé","volume":"Volume","nameTitle":"Nom (facultatif, 10 caractères maximum)","namePlaceholder":"10 caractères maximum","nameTooLong":"Le nom ne doit pas dépasser 10 caractères.","nameAria":"Nom du joueur","home":"Retour à l'accueil","rulesTitle":"Règles","gameAria":"Zone de jeu","points":"{score} points","rankingTop30":"Les 30 meilleurs joueurs","rank":"Rang {rank}","waveEffect":"Vague {wave}","gameTitle":"Vol de Maron","intro":"Ramassez du butin, améliorez votre appareil et franchissez 30 vagues","conceptFight":"🗡️ Battez les ennemis","conceptLoot":"🌰 Améliorez-vous avec le butin","conceptClear":"🏆 Franchissez 30 vagues","goalTitle":"🎯 Objectif","goalRule":"Battez les ennemis, ramassez du butin et améliorez votre appareil pour franchir les 30 vagues.","controlsTitle":"🕹️ Commandes","controlsRule":"Faites glisser le doigt sur l’écran pour déplacer l’appareil. Il tire automatiquement.","lootRule":"Approchez l’appareil du butin (🌰) pour le ramasser.","upgradesTitle":"⬆️ Améliorations","upgradesRule":"Le butin rapporte de l’expérience. Chaque niveau donne 1 amélioration aléatoire parmi 7 types, sauf ceux au maximum. La première amélioration renforce l’attaque.","wavesTitle":"👾 Vagues","wavesRule":"Il y a 30 vagues et un boss toutes les 5 vagues. Battez le boss de la vague 30 pour terminer le jeu.","telegraphRule":"Les lignes et cercles rouges du boss annoncent ses attaques. Déplacez-vous en lieu sûr pendant leur affichage.","retireTitle":"🏳️ Abandonner","retireRule":"Utilisez « Abandonner » en haut à droite pour arrêter la partie. Les parties abandonnées ne sont pas envoyées au classement.","ready":"Prêt","go":"C’est parti !","retireQuestion":"🏳️ Abandonner ?","retireWarning":"Cette partie ne sera pas envoyée au classement. Abandonner ?","cancel":"Annuler","clearTitle":"🎉 Terminé !","retiredTitle":"🏳️ Abandon","gameOver":"💥 Partie terminée","reached":"Progression","clearProgress":"30 vagues terminées","waveProgress":"Vague {wave} atteinte","finalLevel":"Niveau final","kills":"Ennemis vaincus","loot":"Butin ramassé","escaped":"Ennemis échappés","lootLost":"Butin manqué","retiredExcluded":"Partie abandonnée : aucun envoi","auditExcluded":"Mode audit : aucun envoi au classement","auditInfo":"Mode audit / seed : {seed}","bestUpdated":"🏅 Nouveau record personnel !","boss":"Boss","bossWarning":"⚠ Un boss approche ⚠","bonus":"Bonus de score +1,000","levelUp":"Niveau supérieur ! {upgrade}","upgrade_bullet":"+1 projectile","upgrade_firerate":"Cadence de tir accrue","upgrade_piercing":"Tirs perforants","upgrade_shield":"+1 bouclier","upgrade_maxhp":"+1 PV maximum","upgrade_collectrange":"Portée de ramassage accrue","upgrade_hitreduce":"Zone de collision réduite","shareDescription":"Un jeu de tir à défilement vertical : battez les ennemis, ramassez du butin et améliorez votre appareil au fil de 30 vagues.","shareResult":"{progress}\nScore : {score} points\nNiveau final : {level}","storageFailed":"Cet appareil ne peut pas enregistrer le résultat. Pour ne pas le perdre, ne rechargez pas la page ; réessayez lorsque l’enregistrement sera possible."},"de":{"language":"Sprache","start":"Spiel starten","shareX":"Auf X teilen","ranking":"Rangliste","otherGames":"Andere Spiele spielen","retire":"Aufgeben","retry":"Erneut spielen","finish":"Zur Startseite","back":"Zurück","copyHeading":"Text zum Teilen kopieren","copyHelp":"Wenn X nicht geöffnet wird, kopiere den Text und die URL für deinen Beitrag.","copyTextAria":"Text und URL zum Teilen","copy":"Kopieren","close":"Schließen","copied":"Kopiert. Prüfe und veröffentliche deinen Beitrag auf X.","copyManual":"Markiere den Text und kopiere ihn manuell.","clipboardCopied":"In die Zwischenablage kopiert","copyFailed":"Kopieren fehlgeschlagen","rankingUnavailable":"Die Rangliste ist derzeit nicht verfügbar. Dein Ergebnis bleibt sichtbar.","rankingSending":"Ergebnis wird übermittelt…","rankingSendFailed":"Dein Ergebnis konnte nicht übermittelt werden. Es bleibt sichtbar.","rankingLoading":"Rangliste wird geladen…","rankingSent":"Ergebnis übermittelt","rankingLoaded":"Rangliste geladen","rankingLoadFailed":"Die Rangliste konnte nicht geladen werden. Dein Ergebnis bleibt sichtbar.","unnamed":"Ohne Namen","noRecords":"Noch keine Ergebnisse","nameDisclosure":"Wenn du einen Namen eingibst, werden dein Name und dein Ergebnis in der Rangliste veröffentlicht. Du kannst das Feld leer lassen.","retrySend":"Ergebnis erneut senden","retryRanking":"Rangliste neu laden","guestResult":"Du hast ohne Namen gespielt. Dieses Ergebnis wird nicht veröffentlicht.","scorePending":"Dein Ergebnis wartet auf die Übertragung. Bei erneuter Verbindung wird dasselbe Ergebnis nochmals gesendet.","soundOn":"Ton: an","soundOff":"Ton: aus","volume":"Lautstärke","nameTitle":"Name (freiwillig, bis zu 10 Zeichen)","namePlaceholder":"Bis zu 10 Zeichen","nameTooLong":"Der Name darf höchstens 10 Zeichen lang sein.","nameAria":"Spielername","home":"Zur Startseite","rulesTitle":"Regeln","gameAria":"Spielfeld","points":"{score} Punkte","rankingTop30":"Die besten 30 Spieler","rank":"Platz {rank}","waveEffect":"Welle {wave}","gameTitle":"Marons Flug","intro":"Sammle Beute, verbessere dein Flugzeug und überstehe 30 Wellen","conceptFight":"🗡️ Besiege Gegner","conceptLoot":"🌰 Verbesserungen durch Beute","conceptClear":"🏆 Überstehe 30 Wellen","goalTitle":"🎯 Ziel","goalRule":"Besiege Gegner, sammle Beute und verbessere dein Flugzeug, um alle 30 Wellen zu überstehen.","controlsTitle":"🕹️ Steuerung","controlsRule":"Ziehe über den Bildschirm, um das Flugzeug zu bewegen. Es schießt automatisch.","lootRule":"Fliege nahe an Beute (🌰) heran, um sie einzusammeln.","upgradesTitle":"⬆️ Verbesserungen","upgradesRule":"Beute gibt Erfahrung. Pro Stufenaufstieg erhältst du 1 zufällige Verbesserung aus 7 Arten, außer bereits ausgereizten. Die erste Verbesserung verstärkt den Angriff.","wavesTitle":"👾 Wellen","wavesRule":"Es gibt 30 Wellen und alle 5 Wellen einen Boss. Besiege den Boss in Welle 30, um das Spiel zu schaffen.","telegraphRule":"Rote Linien und Kreise des Bosses warnen vor Angriffen. Bewege dich an einen sicheren Ort, solange sie sichtbar sind.","retireTitle":"🏳️ Aufgeben","retireRule":"Mit „Aufgeben“ oben rechts kannst du die Runde vorzeitig beenden. Aufgegebene Runden werden nicht an die Rangliste gesendet.","ready":"Bereit","go":"Los!","retireQuestion":"🏳️ Aufgeben?","retireWarning":"Diese Runde wird nicht an die Rangliste gesendet. Jetzt aufgeben?","cancel":"Abbrechen","clearTitle":"🎉 Geschafft!","retiredTitle":"🏳️ Aufgegeben","gameOver":"💥 Spiel vorbei","reached":"Fortschritt","clearProgress":"30 Wellen geschafft","waveProgress":"Welle {wave} erreicht","finalLevel":"Endstufe","kills":"Besiegte Gegner","loot":"Gesammelte Beute","escaped":"Entkommene Gegner","lootLost":"Verpasste Beute","retiredExcluded":"Aufgegeben: kein Ergebnis gesendet","auditExcluded":"Prüfmodus: keine Übermittlung an die Rangliste","auditInfo":"Prüfmodus / Seed: {seed}","bestUpdated":"🏅 Neuer persönlicher Rekord!","boss":"Boss","bossWarning":"⚠ Boss im Anflug ⚠","bonus":"Punktebonus +1,000","levelUp":"Stufenaufstieg! {upgrade}","upgrade_bullet":"+1 Geschoss","upgrade_firerate":"Schnellere Schussfolge","upgrade_piercing":"Durchschlagende Schüsse","upgrade_shield":"+1 Schild","upgrade_maxhp":"+1 maximale LP","upgrade_collectrange":"Größerer Sammelradius","upgrade_hitreduce":"Kleinere Trefferfläche","shareDescription":"Ein vertikal scrollendes Schießspiel: Besiege Gegner, sammle Beute und verbessere dein Flugzeug über 30 Wellen.","shareResult":"{progress}\nPunktzahl: {score} Punkte\nEndstufe: {level}","storageFailed":"Dieses Gerät kann den Eintrag nicht speichern. Lade die Seite nicht neu, damit das Ergebnis erhalten bleibt. Versuche es erneut, sobald Speichern möglich ist."},"ko":{"language":"언어","start":"게임 시작","shareX":"X에 공유","ranking":"랭킹","otherGames":"다른 게임 하기","retire":"그만두기","retry":"다시 플레이","finish":"게임 종료","back":"뒤로","copyHeading":"공유 문구 복사","copyHelp":"X를 열 수 없으면 본문과 URL을 복사하여 게시할 수 있습니다.","copyTextAria":"공유할 본문과 URL","copy":"복사","close":"닫기","copied":"복사했습니다. X에서 게시 내용을 확인해 주세요.","copyManual":"본문을 선택하여 직접 복사해 주세요.","clipboardCopied":"클립보드에 복사했습니다","copyFailed":"복사하지 못했습니다","rankingUnavailable":"현재 랭킹을 이용할 수 없습니다. 이번 결과는 화면에 남아 있습니다.","rankingSending":"랭킹으로 전송하는 중…","rankingSendFailed":"랭킹 전송에 실패했습니다. 이번 결과는 화면에 남아 있습니다.","rankingLoading":"랭킹을 불러오는 중…","rankingSent":"랭킹에 반영했습니다","rankingLoaded":"랭킹을 불러왔습니다","rankingLoadFailed":"랭킹을 불러오지 못했습니다. 결과 화면은 그대로 유지됩니다.","unnamed":"이름 없음","noRecords":"아직 기록이 없습니다","nameDisclosure":"이름을 입력하면 이름과 기록이 순위표에 공개됩니다. 비워 두어도 플레이할 수 있습니다.","retrySend":"기록 전송 다시 시도","retryRanking":"순위표 새로고침","guestResult":"이름 없이 플레이했습니다. 이 기록은 공개하지 않습니다.","scorePending":"기록이 전송 대기 중입니다. 연결이 복구되면 같은 결과를 다시 전송합니다.","soundOn":"효과음: 켜짐","soundOff":"효과음: 꺼짐","volume":"음량","nameTitle":"이름(선택 사항·최대 10자)","namePlaceholder":"최대 10자","nameTooLong":"이름은 10자 이내로 입력해 주세요.","nameAria":"플레이어 이름","home":"홈으로 돌아가기","rulesTitle":"게임 규칙","gameAria":"게임 화면","points":"{score}점","rankingTop30":"랭킹 상위 30명","rank":"{rank}위","waveEffect":"{wave}웨이브","gameTitle":"마론 비행","intro":"전리품으로 기체를 강화하며 30웨이브 돌파를 노리세요","conceptFight":"🗡️ 적 격파","conceptLoot":"🌰 전리품으로 강화","conceptClear":"🏆 30웨이브 돌파","goalTitle":"🎯 목표","goalRule":"적을 물리치고 전리품을 모아 기체를 강화하면서 30웨이브 돌파를 노리세요.","controlsTitle":"🕹️ 조작","controlsRule":"화면을 드래그하면 기체가 움직입니다. 사격은 자동입니다.","lootRule":"기체를 전리품(🌰) 가까이 이동하면 수집할 수 있습니다.","upgradesTitle":"⬆️ 강화","upgradesRule":"전리품으로 경험치가 증가하며, 레벨업하면 7종류 중 무작위 강화 1개를 얻습니다. 상한에 도달한 강화는 제외하며, 첫 강화는 공격 계열입니다.","wavesTitle":"👾 웨이브","wavesRule":"총 30웨이브이며 5웨이브마다 보스가 등장합니다. 30웨이브의 보스를 물리치면 클리어입니다.","telegraphRule":"보스의 빨간 선과 원은 공격 예고입니다. 표시되는 동안 안전한 위치로 이동하세요.","retireTitle":"🏳️ 포기에 관하여","retireRule":"오른쪽 위의 ‘포기’로 중간에 종료할 수 있습니다. 포기한 플레이는 랭킹에 전송되지 않습니다.","ready":"준비 완료","go":"시작!","retireQuestion":"🏳️ 포기할까요?","retireWarning":"이번 플레이는 랭킹에 전송되지 않습니다. 포기할까요?","cancel":"취소","clearTitle":"🎉 클리어!","retiredTitle":"🏳️ 포기","gameOver":"💥 게임 오버","reached":"도달","clearProgress":"30웨이브 클리어","waveProgress":"{wave}웨이브 도달","finalLevel":"최종 레벨","kills":"격파 수","loot":"전리품","escaped":"도주","lootLost":"미수집","retiredExcluded":"포기하여 전송하지 않음","auditExcluded":"감사 모드이므로 랭킹에 전송하지 않음","auditInfo":"감사 모드 / seed: {seed}","bestUpdated":"🏅 최고 도달 기록 갱신!","boss":"보스","bossWarning":"⚠ 보스 등장 ⚠","bonus":"점수 보너스 +1,000","levelUp":"레벨 업! {upgrade}","upgrade_bullet":"탄환 수 +1","upgrade_firerate":"연사 속도 증가","upgrade_piercing":"관통탄","upgrade_shield":"보호막 +1","upgrade_maxhp":"최대 내구 +1","upgrade_collectrange":"수집 범위 증가","upgrade_hitreduce":"피격 판정 축소","shareDescription":"적을 물리치고 전리품을 모아 기체를 강화하며 30웨이브 돌파를 노리는 세로 스크롤 슈팅 게임.","shareResult":"{progress}\n점수: {score}점\n최종 레벨: {level}","storageFailed":"이 기기에 기록을 저장할 수 없습니다. 결과를 잃지 않도록 새로고침하지 말고, 저장할 수 있을 때 다시 시도하세요."},"ru":{"language":"Язык","start":"Начать игру","shareX":"Поделиться в X","ranking":"Таблица лидеров","otherGames":"Другие игры","retire":"Прекратить игру","retry":"Играть ещё раз","finish":"Завершить игру","back":"Назад","copyHeading":"Скопировать текст для публикации","copyHelp":"Если X не открывается, скопируйте текст и ссылку и опубликуйте их самостоятельно.","copyTextAria":"Текст и ссылка для публикации","copy":"Копировать","close":"Закрыть","copied":"Скопировано. Проверьте публикацию в X.","copyManual":"Выделите текст и скопируйте его вручную.","clipboardCopied":"Скопировано в буфер обмена","copyFailed":"Не удалось скопировать","rankingUnavailable":"Таблица лидеров сейчас недоступна. Ваш результат остаётся на экране.","rankingSending":"Отправка в таблицу лидеров…","rankingSendFailed":"Не удалось отправить результат. Он остаётся на экране.","rankingLoading":"Загрузка таблицы лидеров…","rankingSent":"Результат добавлен в таблицу","rankingLoaded":"Таблица лидеров загружена","rankingLoadFailed":"Не удалось загрузить таблицу. Экран результата остаётся открытым.","unnamed":"Без имени","noRecords":"Пока нет результатов","nameDisclosure":"Если указать имя, ваше имя и результат будут опубликованы в рейтинге. Можно играть, оставив поле пустым.","retrySend":"Повторить отправку","retryRanking":"Обновить рейтинг","guestResult":"Вы играли без имени. Этот результат не будет опубликован.","scorePending":"Результат ожидает отправки. После восстановления связи будет повторно отправлен тот же результат.","soundOn":"Звук: вкл.","soundOff":"Звук: выкл.","volume":"Громкость","nameTitle":"Имя (необязательно, до 10 символов)","namePlaceholder":"До 10 символов","nameTooLong":"Имя должно быть не длиннее 10 символов.","nameAria":"Имя игрока","home":"На главный экран","rulesTitle":"Правила","gameAria":"Игровое поле","points":"Очки: {score}","rankingTop30":"Лучшие 30 игроков","rank":"Место: {rank}","waveEffect":"Волна {wave}","gameTitle":"Полёт Марона","intro":"Собирайте добычу, улучшайте самолёт и пройдите 30 волн","conceptFight":"🗡️ Побеждайте врагов","conceptLoot":"🌰 Улучшайтесь за добычу","conceptClear":"🏆 Пройдите 30 волн","goalTitle":"🎯 Цель","goalRule":"Побеждайте врагов, собирайте добычу и улучшайте самолёт, чтобы пройти все 30 волн.","controlsTitle":"🕹️ Управление","controlsRule":"Ведите по экрану, чтобы двигать самолёт. Он стреляет автоматически.","lootRule":"Подлетайте к добыче (🌰), чтобы собрать её.","upgradesTitle":"⬆️ Улучшения","upgradesRule":"Добыча даёт опыт. Каждый уровень даёт 1 случайное улучшение из 7 типов, кроме достигших предела. Первое улучшение усиливает атаку.","wavesTitle":"👾 Волны","wavesRule":"Всего 30 волн, босс появляется каждые 5 волн. Победите босса волны 30, чтобы пройти игру.","telegraphRule":"Красные линии и круги босса предупреждают об атаке. Переместитесь в безопасное место, пока они видны.","retireTitle":"🏳️ Прерывание игры","retireRule":"Нажмите «Прервать» справа вверху для досрочного завершения. Прерванные игры не отправляются в рейтинг.","ready":"Готово","go":"Старт!","retireQuestion":"🏳️ Прервать игру?","retireWarning":"Эта игра не будет отправлена в рейтинг. Прервать?","cancel":"Отмена","clearTitle":"🎉 Пройдено!","retiredTitle":"🏳️ Игра прервана","gameOver":"💥 Игра окончена","reached":"Прогресс","clearProgress":"Пройдено 30 волн","waveProgress":"Достигнута волна {wave}","finalLevel":"Итоговый уровень","kills":"Уничтожено врагов","loot":"Собрано добычи","escaped":"Враги сбежали","lootLost":"Пропущено добычи","retiredExcluded":"Игра прервана: результат не отправляется","auditExcluded":"Режим аудита: без отправки в рейтинг","auditInfo":"Режим аудита / seed: {seed}","bestUpdated":"🏅 Новый личный рекорд!","boss":"Босс","bossWarning":"⚠ Появляется босс ⚠","bonus":"Бонус к счёту +1,000","levelUp":"Новый уровень! {upgrade}","upgrade_bullet":"+1 снаряд","upgrade_firerate":"Повышение скорострельности","upgrade_piercing":"Пробивающие снаряды","upgrade_shield":"+1 щит","upgrade_maxhp":"+1 к максимуму HP","upgrade_collectrange":"Больше радиус сбора","upgrade_hitreduce":"Меньше область попадания","shareDescription":"Вертикальный скролл-шутер: побеждайте врагов, собирайте добычу и улучшайте самолёт на пути через 30 волн.","shareResult":"{progress}\nСчёт: {score} очков\nИтоговый уровень: {level}","storageFailed":"Устройство не может сохранить запись. Чтобы не потерять результат, не перезагружайте страницу. Повторите попытку, когда сохранение станет доступно."},"it":{"language":"Lingua","start":"Inizia partita","shareX":"Condividi su X","ranking":"Classifica","otherGames":"Gioca ad altri giochi","retire":"Abbandona","retry":"Gioca di nuovo","finish":"Torna alla home","back":"Indietro","copyHeading":"Copia il testo da condividere","copyHelp":"Se X non si apre, copia il testo e l'URL per creare il tuo post.","copyTextAria":"Testo e URL da condividere","copy":"Copia","close":"Chiudi","copied":"Copiato. Controlla e pubblica il tuo post su X.","copyManual":"Seleziona il testo e copialo manualmente.","clipboardCopied":"Copiato negli appunti","copyFailed":"Impossibile copiare","rankingUnavailable":"La classifica non è disponibile. Il tuo risultato resta sullo schermo.","rankingSending":"Invio del risultato…","rankingSendFailed":"Impossibile inviare il risultato. Resta sullo schermo.","rankingLoading":"Caricamento della classifica…","rankingSent":"Risultato inviato","rankingLoaded":"Classifica caricata","rankingLoadFailed":"Impossibile caricare la classifica. Il tuo risultato resta sullo schermo.","unnamed":"Senza nome","noRecords":"Nessun risultato per ora","nameDisclosure":"Se inserisci un nome, il tuo nome e il tuo risultato saranno pubblici in classifica. Puoi giocare lasciando il campo vuoto.","retrySend":"Riprova l’invio","retryRanking":"Ricarica la classifica","guestResult":"Hai giocato senza nome. Questo risultato non sarà pubblicato.","scorePending":"Il risultato è in attesa. Lo stesso risultato sarà reinviato quando torna la connessione.","soundOn":"Audio: attivo","soundOff":"Audio: disattivato","volume":"Volume","nameTitle":"Nome (facoltativo, massimo 10 caratteri)","namePlaceholder":"Massimo 10 caratteri","nameTooLong":"Il nome non deve superare i 10 caratteri.","nameAria":"Nome del giocatore","home":"Torna alla schermata iniziale","rulesTitle":"Regole","gameAria":"Campo di gioco","points":"{score} punti","rankingTop30":"I migliori 30 giocatori","rank":"Posizione {rank}","waveEffect":"Ondata {wave}","gameTitle":"Volo di Maron","intro":"Raccogli bottino, potenzia il velivolo e supera 30 ondate","conceptFight":"🗡️ Sconfiggi i nemici","conceptLoot":"🌰 Potenziati col bottino","conceptClear":"🏆 Supera 30 ondate","goalTitle":"🎯 Obiettivo","goalRule":"Sconfiggi i nemici, raccogli bottino e potenzia il velivolo per superare tutte le 30 ondate.","controlsTitle":"🕹️ Comandi","controlsRule":"Trascina sullo schermo per muovere il velivolo. Gli spari sono automatici.","lootRule":"Avvicina il velivolo al bottino (🌰) per raccoglierlo.","upgradesTitle":"⬆️ Potenziamenti","upgradesRule":"Il bottino dà esperienza. Ogni livello assegna 1 potenziamento casuale fra 7 tipi, esclusi quelli al massimo. Il primo potenziamento è d’attacco.","wavesTitle":"👾 Ondate","wavesRule":"Ci sono 30 ondate e un boss ogni 5. Sconfiggi il boss dell’ondata 30 per completare il gioco.","telegraphRule":"Le linee e i cerchi rossi del boss preannunciano gli attacchi. Spostati al sicuro mentre sono visibili.","retireTitle":"🏳️ Abbandonare","retireRule":"Usa «Abbandona» in alto a destra per terminare prima la partita. Le partite abbandonate non vengono inviate alla classifica.","ready":"Pronto","go":"Via!","retireQuestion":"🏳️ Abbandonare?","retireWarning":"Questa partita non sarà inviata alla classifica. Abbandonare?","cancel":"Annulla","clearTitle":"🎉 Completato!","retiredTitle":"🏳️ Abbandono","gameOver":"💥 Fine partita","reached":"Progressi","clearProgress":"30 ondate superate","waveProgress":"Ondata {wave} raggiunta","finalLevel":"Livello finale","kills":"Nemici sconfitti","loot":"Bottino raccolto","escaped":"Nemici fuggiti","lootLost":"Bottino perso","retiredExcluded":"Partita abbandonata: nessun invio","auditExcluded":"Modalità verifica: nessun invio alla classifica","auditInfo":"Modalità verifica / seed: {seed}","bestUpdated":"🏅 Nuovo record personale!","boss":"Boss","bossWarning":"⚠ Boss in arrivo ⚠","bonus":"Bonus punteggio +1,000","levelUp":"Livello aumentato! {upgrade}","upgrade_bullet":"+1 proiettile","upgrade_firerate":"Cadenza di fuoco aumentata","upgrade_piercing":"Colpi perforanti","upgrade_shield":"+1 scudo","upgrade_maxhp":"+1 salute massima","upgrade_collectrange":"Raggio di raccolta aumentato","upgrade_hitreduce":"Area colpibile ridotta","shareDescription":"Uno sparatutto a scorrimento verticale: sconfiggi i nemici, raccogli bottino e potenzia il velivolo attraverso 30 ondate.","shareResult":"{progress}\nPunteggio: {score} punti\nLivello finale: {level}","storageFailed":"Questo dispositivo non può salvare il record. Per non perdere il risultato, non ricaricare la pagina; riprova quando sarà possibile salvare."},"zh-Hant":{"language":"語言","start":"開始遊戲","shareX":"分享到X","ranking":"排行榜","otherGames":"玩其他遊戲","retire":"退出本局","retry":"再玩一次","finish":"返回首頁","back":"返回","copyHeading":"複製分享內容","copyHelp":"如果無法開啟X，可以複製文字和連結後自行發文。","copyTextAria":"要分享的文字和連結","copy":"複製","close":"關閉","copied":"已複製。請在X確認並發文。","copyManual":"請選取文字並手動複製。","clipboardCopied":"已複製到剪貼簿","copyFailed":"複製失敗","rankingUnavailable":"排行榜暫時無法使用。本次結果仍保留在畫面上。","rankingSending":"正在提交成績…","rankingSendFailed":"成績提交失敗。本次結果仍保留在畫面上。","rankingLoading":"正在載入排行榜…","rankingSent":"成績已提交","rankingLoaded":"排行榜已載入","rankingLoadFailed":"排行榜載入失敗。本次結果仍保留在畫面上。","unnamed":"未命名","noRecords":"暫無紀錄","nameDisclosure":"輸入名稱後，你的名稱和成績將顯示在公開排行榜中。也可以留空遊玩。","retrySend":"重試提交成績","retryRanking":"重新載入排行榜","guestResult":"本局未填寫名稱，不會公開成績。","scorePending":"成績等待提交。網路恢復後將重試提交同一結果。","soundOn":"音效：開","soundOff":"音效：關","volume":"音量","nameTitle":"名稱（選填，最多10個字元）","namePlaceholder":"最多10個字元","nameTooLong":"名稱不能超過10個字元。","nameAria":"玩家名稱","home":"返回首頁","rulesTitle":"玩法說明","gameAria":"遊戲區域","points":"{score}分","rankingTop30":"排行榜前30名","rank":"第{rank}名","waveEffect":"第{wave}波","gameTitle":"栗子飛行","intro":"收集戰利品，強化飛機，挑戰全部30波。","conceptFight":"🗡️ 擊敗敵人","conceptLoot":"🌰 戰利品強化","conceptClear":"🏆 突破30波","goalTitle":"🎯 目標","goalRule":"擊敗敵人並收集戰利品，強化飛機，突破全部30波。","controlsTitle":"🕹️ 操作","controlsRule":"在畫面上拖曳即可移動飛機。飛機會自動射擊。","lootRule":"靠近戰利品（🌰）即可拾取。","upgradesTitle":"⬆️ 強化","upgradesRule":"拾取戰利品可獲得經驗。每次升級隨機獲得7種強化中的一種，已達上限的強化除外。第一次強化必定是攻擊類。","wavesTitle":"👾 波次","wavesRule":"共30波，每5波出現一個頭目。擊敗第30波的頭目即可通關。","telegraphRule":"頭目的紅線和紅圈是攻擊預警。請在顯示預警時移到安全位置。","retireTitle":"🏳️ 關於退出","retireRule":"點擊右上角的「退出」可提前結束。本次退出的成績不會提交到排行榜。","ready":"準備就緒","go":"開始！","retireQuestion":"🏳️ 要退出嗎？","retireWarning":"本次成績不會提交到排行榜。確定退出嗎？","cancel":"取消","clearTitle":"🎉 通關！","retiredTitle":"🏳️ 已退出","gameOver":"💥 遊戲結束","reached":"進度","clearProgress":"通關30波","waveProgress":"到達第{wave}波","finalLevel":"最終等級","kills":"擊敗敵人數","loot":"拾取戰利品","escaped":"逃脫敵人數","lootLost":"未拾取戰利品","retiredExcluded":"已退出：不提交成績","auditExcluded":"稽核模式：不提交排行榜","auditInfo":"稽核模式 / seed: {seed}","bestUpdated":"🏅 刷新個人最佳！","boss":"頭目","bossWarning":"⚠ 頭目來襲 ⚠","bonus":"分數獎勵 +1,000","levelUp":"升級！{upgrade}","upgrade_bullet":"彈數+1","upgrade_firerate":"提高射速","upgrade_piercing":"穿透彈","upgrade_shield":"護盾+1","upgrade_maxhp":"最大耐久+1","upgrade_collectrange":"擴大拾取範圍","upgrade_hitreduce":"縮小受擊範圍","shareDescription":"擊敗敵人、收集戰利品並強化飛機，在縱向捲軸射擊遊戲中挑戰30波。","shareResult":"{progress}\n分數：{score}分\n最終等級：{level}","storageFailed":"此裝置無法儲存紀錄。為避免遺失結果，請勿重新載入頁面，待可儲存時重試。"},"id":{"language":"Bahasa","start":"Mulai permainan","shareX":"Bagikan di X","ranking":"Papan peringkat","otherGames":"Mainkan game lain","retire":"Berhenti","retry":"Main lagi","finish":"Akhiri permainan","back":"Kembali","copyHeading":"Salin teks berbagi","copyHelp":"Jika X tidak terbuka, salin teks dan URL untuk diposting sendiri.","copyTextAria":"Teks dan URL untuk dibagikan","copy":"Salin","close":"Tutup","copied":"Disalin. Periksa posting Anda di X.","copyManual":"Pilih teks dan salin secara manual.","clipboardCopied":"Disalin ke papan klip","copyFailed":"Tidak dapat menyalin","rankingUnavailable":"Papan peringkat sedang tidak tersedia. Hasil kali ini tetap ada di layar.","rankingSending":"Mengirim ke papan peringkat…","rankingSendFailed":"Gagal mengirim ke papan peringkat. Hasil kali ini tetap ada di layar.","rankingLoading":"Memuat papan peringkat…","rankingSent":"Hasil ditambahkan ke papan peringkat","rankingLoaded":"Papan peringkat dimuat","rankingLoadFailed":"Gagal memuat papan peringkat. Tampilan hasil tetap terbuka.","unnamed":"Tanpa nama","noRecords":"Belum ada catatan","nameDisclosure":"Jika mengisi nama, nama dan skor Anda akan dipublikasikan di peringkat. Anda tetap bisa bermain jika kolom ini kosong.","retrySend":"Coba kirim skor lagi","retryRanking":"Muat ulang peringkat","guestResult":"Anda bermain tanpa nama. Skor ini tidak akan dipublikasikan.","scorePending":"Skor menunggu pengiriman. Hasil yang sama akan dikirim ulang setelah koneksi pulih.","soundOn":"Suara: aktif","soundOff":"Suara: nonaktif","volume":"Volume","nameTitle":"Nama (opsional, maksimal 10 karakter)","namePlaceholder":"Maksimal 10 karakter","nameTooLong":"Nama maksimal 10 karakter.","nameAria":"Nama pemain","home":"Kembali ke beranda","rulesTitle":"Aturan","gameAria":"Area permainan","points":"{score} poin","rankingTop30":"30 pemain teratas","rank":"Peringkat {rank}","waveEffect":"Gelombang {wave}","gameTitle":"Penerbangan Maron","intro":"Kumpulkan jarahan untuk meningkatkan pesawat dan melewati 30 gelombang","conceptFight":"🗡️ Kalahkan musuh","conceptLoot":"🌰 Tingkatkan dengan jarahan","conceptClear":"🏆 Selesaikan 30 gelombang","goalTitle":"🎯 Tujuan","goalRule":"Kalahkan musuh, kumpulkan jarahan, dan tingkatkan pesawat untuk menyelesaikan 30 gelombang.","controlsTitle":"🕹️ Kontrol","controlsRule":"Geser di layar untuk menggerakkan pesawat. Tembakan dilakukan otomatis.","lootRule":"Dekatkan pesawat ke jarahan (🌰) untuk mengambilnya.","upgradesTitle":"⬆️ Peningkatan","upgradesRule":"Jarahan memberi pengalaman. Setiap kenaikan level memberi 1 peningkatan acak dari 7 jenis, kecuali yang sudah maksimal. Peningkatan pertama adalah jenis serangan.","wavesTitle":"👾 Gelombang","wavesRule":"Ada 30 gelombang, dengan bos setiap 5 gelombang. Kalahkan bos gelombang 30 untuk menyelesaikan permainan.","telegraphRule":"Garis dan lingkaran merah bos adalah peringatan serangan. Pindah ke tempat aman selama indikator terlihat.","retireTitle":"🏳️ Tentang menyerah","retireRule":"Gunakan “Menyerah” di kanan atas untuk mengakhiri permainan. Permainan yang ditinggalkan tidak dikirim ke peringkat.","ready":"Siap","go":"Mulai!","retireQuestion":"🏳️ Menyerah?","retireWarning":"Permainan ini tidak akan dikirim ke peringkat. Menyerah sekarang?","cancel":"Batal","clearTitle":"🎉 Selesai!","retiredTitle":"🏳️ Menyerah","gameOver":"💥 Permainan berakhir","reached":"Kemajuan","clearProgress":"30 gelombang selesai","waveProgress":"Mencapai gelombang {wave}","finalLevel":"Level akhir","kills":"Musuh dikalahkan","loot":"Jarahan terkumpul","escaped":"Musuh lolos","lootLost":"Jarahan terlewat","retiredExcluded":"Menyerah: skor tidak dikirim","auditExcluded":"Mode audit: tidak dikirim ke peringkat","auditInfo":"Mode audit / seed: {seed}","bestUpdated":"🏅 Rekor pribadi baru!","boss":"Bos","bossWarning":"⚠ Bos mendekat ⚠","bonus":"Bonus skor +1,000","levelUp":"Naik level! {upgrade}","upgrade_bullet":"+1 proyektil","upgrade_firerate":"Laju tembak lebih cepat","upgrade_piercing":"Peluru penembus","upgrade_shield":"+1 perisai","upgrade_maxhp":"+1 HP maksimum","upgrade_collectrange":"Jangkauan pengumpulan lebih luas","upgrade_hitreduce":"Area terkena lebih kecil","shareDescription":"Game tembak gulir vertikal: kalahkan musuh, kumpulkan jarahan, dan tingkatkan pesawat melewati 30 gelombang.","shareResult":"{progress}\nSkor: {score} poin\nLevel akhir: {level}","storageFailed":"Perangkat ini tidak dapat menyimpan catatan. Agar hasil tidak hilang, jangan muat ulang halaman; coba lagi saat penyimpanan tersedia."},"tr":{"language":"Dil","start":"Oyunu başlat","shareX":"X'te paylaş","ranking":"Sıralama","otherGames":"Diğer oyunları oyna","retire":"Oyunu bırak","retry":"Tekrar oyna","finish":"Oyunu bitir","back":"Geri","copyHeading":"Paylaşım metnini kopyala","copyHelp":"X açılamıyorsa metni ve bağlantıyı kopyalayıp paylaşabilirsiniz.","copyTextAria":"Paylaşılacak metin ve bağlantı","copy":"Kopyala","close":"Kapat","copied":"Kopyalandı. Gönderinizi X'te kontrol edin.","copyManual":"Metni seçip elle kopyalayın.","clipboardCopied":"Panoya kopyalandı","copyFailed":"Kopyalanamadı","rankingUnavailable":"Sıralama şu anda kullanılamıyor. Bu oyunun sonucu ekranda kalır.","rankingSending":"Sıralamaya gönderiliyor…","rankingSendFailed":"Sıralamaya gönderilemedi. Bu oyunun sonucu ekranda kalır.","rankingLoading":"Sıralama yükleniyor…","rankingSent":"Sıralamaya eklendi","rankingLoaded":"Sıralama yüklendi","rankingLoadFailed":"Sıralama yüklenemedi. Sonuç ekranı açık kalır.","unnamed":"Adsız","noRecords":"Henüz kayıt yok","nameDisclosure":"Bir ad girerseniz adınız ve sonucunuz sıralamada herkese açık olur. Alanı boş bırakarak da oynayabilirsiniz.","retrySend":"Sonucu yeniden gönder","retryRanking":"Sıralamayı yenile","guestResult":"Adsız oynadınız. Bu sonuç yayımlanmayacak.","scorePending":"Sonucunuz gönderilmeyi bekliyor. Bağlantı geri geldiğinde aynı sonuç yeniden gönderilecek.","soundOn":"Ses: açık","soundOff":"Ses: kapalı","volume":"Ses düzeyi","nameTitle":"Ad (isteğe bağlı, en fazla 10 karakter)","namePlaceholder":"En fazla 10 karakter","nameTooLong":"Ad en fazla 10 karakter olabilir.","nameAria":"Oyuncu adı","home":"Ana ekrana dön","rulesTitle":"Kurallar","gameAria":"Oyun alanı","points":"{score} puan","rankingTop30":"En iyi 30 oyuncu","rank":"{rank}. sıra","waveEffect":"{wave}. dalga","gameTitle":"Maron Uçuşu","intro":"Ganimet toplayıp uçağını geliştirerek 30 dalgayı geç","conceptFight":"🗡️ Düşmanları yen","conceptLoot":"🌰 Ganimetle güçlen","conceptClear":"🏆 30 dalgayı geç","goalTitle":"🎯 Hedef","goalRule":"Düşmanları yen, ganimet topla ve uçağını geliştirerek 30 dalganın tamamını geç.","controlsTitle":"🕹️ Kontroller","controlsRule":"Uçağı hareket ettirmek için ekranı sürükle. Ateş otomatik açılır.","lootRule":"Ganimeti (🌰) toplamak için uçağını yaklaştır.","upgradesTitle":"⬆️ Geliştirmeler","upgradesRule":"Ganimet deneyim kazandırır. Her seviyede sınırına ulaşmamış 7 türden 1 rastgele geliştirme alınır. İlk geliştirme saldırı türündedir.","wavesTitle":"👾 Dalgalar","wavesRule":"Toplam 30 dalga vardır; her 5 dalgada bir büyük düşman çıkar. Oyunu bitirmek için 30. dalgadaki büyük düşmanı yen.","telegraphRule":"Büyük düşmanın kırmızı çizgi ve daireleri saldırı uyarısıdır. Görünürken güvenli yere geç.","retireTitle":"🏳️ Oyunu bırakma","retireRule":"Sağ üstteki “Bırak” ile oyunu erken bitirebilirsin. Bırakılan oyunlar sıralamaya gönderilmez.","ready":"Hazır","go":"Başla!","retireQuestion":"🏳️ Bırakılsın mı?","retireWarning":"Bu oyun sıralamaya gönderilmeyecek. Bırakılsın mı?","cancel":"İptal","clearTitle":"🎉 Tamamlandı!","retiredTitle":"🏳️ Bırakıldı","gameOver":"💥 Oyun bitti","reached":"İlerleme","clearProgress":"30 dalga geçildi","waveProgress":"{wave}. dalgaya ulaşıldı","finalLevel":"Son seviye","kills":"Yenilen düşmanlar","loot":"Toplanan ganimet","escaped":"Kaçan düşmanlar","lootLost":"Kaçırılan ganimet","retiredExcluded":"Oyun bırakıldı: skor gönderilmez","auditExcluded":"Denetim modu: sıralamaya gönderilmez","auditInfo":"Denetim modu / seed: {seed}","bestUpdated":"🏅 Yeni kişisel rekor!","boss":"Büyük düşman","bossWarning":"⚠ Büyük düşman geliyor ⚠","bonus":"Puan bonusu +1,000","levelUp":"Seviye atladın! {upgrade}","upgrade_bullet":"+1 mermi","upgrade_firerate":"Daha hızlı seri atış","upgrade_piercing":"Delici mermiler","upgrade_shield":"+1 kalkan","upgrade_maxhp":"+1 azami HP","upgrade_collectrange":"Daha geniş toplama alanı","upgrade_hitreduce":"Daha küçük isabet alanı","shareDescription":"Düşmanları yenip ganimet topladığın, uçağını geliştirerek 30 dalgayı geçtiğin dikey kaydırmalı nişancı oyunu.","shareResult":"{progress}\nSkor: {score} puan\nSon seviye: {level}","storageFailed":"Bu cihaz kaydı saklayamıyor. Sonucu kaybetmemek için sayfayı yenilemeyin; kayıt mümkün olduğunda yeniden deneyin."},"vi":{"language":"Ngôn ngữ","start":"Bắt đầu chơi","shareX":"Chia sẻ lên X","ranking":"Bảng xếp hạng","otherGames":"Chơi trò khác","retire":"Bỏ cuộc","retry":"Chơi lại","finish":"Về trang chủ","back":"Quay lại","copyHeading":"Sao chép nội dung chia sẻ","copyHelp":"Nếu không mở được X, hãy sao chép nội dung và đường dẫn để tự đăng.","copyTextAria":"Nội dung và đường dẫn để chia sẻ","copy":"Sao chép","close":"Đóng","copied":"Đã sao chép. Hãy kiểm tra và đăng trên X.","copyManual":"Hãy chọn nội dung và sao chép thủ công.","clipboardCopied":"Đã sao chép vào bộ nhớ tạm","copyFailed":"Không thể sao chép","rankingUnavailable":"Bảng xếp hạng hiện không khả dụng. Kết quả vẫn được giữ trên màn hình.","rankingSending":"Đang gửi thành tích…","rankingSendFailed":"Không thể gửi thành tích. Kết quả vẫn được giữ trên màn hình.","rankingLoading":"Đang tải bảng xếp hạng…","rankingSent":"Đã gửi thành tích","rankingLoaded":"Đã tải bảng xếp hạng","rankingLoadFailed":"Không thể tải bảng xếp hạng. Kết quả vẫn được giữ trên màn hình.","unnamed":"Chưa đặt tên","noRecords":"Chưa có thành tích","nameDisclosure":"Nếu nhập tên, tên và thành tích của bạn sẽ công khai trên bảng xếp hạng. Bạn vẫn có thể chơi khi để trống.","retrySend":"Thử gửi lại thành tích","retryRanking":"Tải lại bảng xếp hạng","guestResult":"Bạn đã chơi không tên. Thành tích này sẽ không công khai.","scorePending":"Thành tích đang chờ gửi. Cùng kết quả này sẽ được gửi lại khi có kết nối.","soundOn":"Âm thanh: bật","soundOff":"Âm thanh: tắt","volume":"Âm lượng","nameTitle":"Tên (không bắt buộc, tối đa 10 ký tự)","namePlaceholder":"Tối đa 10 ký tự","nameTooLong":"Tên không được dài quá 10 ký tự.","nameAria":"Tên người chơi","home":"Về trang chủ","rulesTitle":"Cách chơi","gameAria":"Khu vực trò chơi","points":"{score} điểm","rankingTop30":"30 người đứng đầu","rank":"Hạng {rank}","waveEffect":"Đợt {wave}","gameTitle":"Maron bay","intro":"Nhặt chiến lợi phẩm để nâng cấp máy bay và vượt qua cả 30 đợt.","conceptFight":"🗡️ Hạ kẻ địch","conceptLoot":"🌰 Nâng cấp bằng chiến lợi phẩm","conceptClear":"🏆 Vượt 30 đợt","goalTitle":"🎯 Mục tiêu","goalRule":"Hạ kẻ địch, nhặt chiến lợi phẩm và nâng cấp máy bay để vượt qua cả 30 đợt.","controlsTitle":"🕹️ Điều khiển","controlsRule":"Kéo trên màn hình để di chuyển máy bay. Máy bay tự động bắn.","lootRule":"Đưa máy bay đến gần chiến lợi phẩm (🌰) để nhặt.","upgradesTitle":"⬆️ Nâng cấp","upgradesRule":"Chiến lợi phẩm cho kinh nghiệm. Mỗi lần lên cấp nhận ngẫu nhiên một trong 7 loại nâng cấp, trừ loại đã đạt giới hạn. Lần nâng cấp đầu tiên luôn thuộc nhóm tấn công.","wavesTitle":"👾 Các đợt","wavesRule":"Có 30 đợt, cứ 5 đợt xuất hiện một trùm. Hạ trùm ở đợt 30 để hoàn thành trò chơi.","telegraphRule":"Đường và vòng tròn đỏ của trùm báo trước đòn đánh. Hãy di chuyển đến nơi an toàn khi chúng xuất hiện.","retireTitle":"🏳️ Về việc bỏ cuộc","retireRule":"Dùng nút Bỏ cuộc ở góc trên bên phải để kết thúc sớm. Lượt bỏ cuộc không gửi điểm lên bảng xếp hạng.","ready":"Sẵn sàng","go":"Bắt đầu!","retireQuestion":"🏳️ Bỏ cuộc?","retireWarning":"Lượt này sẽ không gửi điểm lên bảng xếp hạng. Bạn muốn bỏ cuộc?","cancel":"Hủy","clearTitle":"🎉 Hoàn thành!","retiredTitle":"🏳️ Đã bỏ cuộc","gameOver":"💥 Kết thúc","reached":"Tiến độ","clearProgress":"Đã vượt 30 đợt","waveProgress":"Đã đến đợt {wave}","finalLevel":"Cấp cuối cùng","kills":"Kẻ địch đã hạ","loot":"Chiến lợi phẩm đã nhặt","escaped":"Kẻ địch thoát được","lootLost":"Chiến lợi phẩm bỏ lỡ","retiredExcluded":"Đã bỏ cuộc: không gửi điểm","auditExcluded":"Chế độ kiểm tra: không gửi điểm xếp hạng","auditInfo":"Chế độ kiểm tra / seed: {seed}","bestUpdated":"🏅 Kỷ lục cá nhân mới!","boss":"Trùm","bossWarning":"⚠ Trùm xuất hiện ⚠","bonus":"Điểm thưởng +1,000","levelUp":"Lên cấp! {upgrade}","upgrade_bullet":"+1 viên đạn","upgrade_firerate":"Tăng tốc độ bắn","upgrade_piercing":"Đạn xuyên","upgrade_shield":"+1 khiên","upgrade_maxhp":"+1 độ bền tối đa","upgrade_collectrange":"Tăng phạm vi thu nhặt","upgrade_hitreduce":"Thu nhỏ vùng trúng đạn","shareDescription":"Hạ kẻ địch, thu chiến lợi phẩm và nâng cấp máy bay qua 30 đợt trong trò bắn máy bay cuộn dọc này.","shareResult":"{progress}\nĐiểm: {score}\nCấp cuối cùng: {level}","storageFailed":"Thiết bị này không thể lưu bản ghi. Để không mất kết quả, đừng tải lại trang; hãy thử lại khi có thể lưu."},"th":{"language":"ภาษา","start":"เริ่มเกม","shareX":"แชร์บน X","ranking":"อันดับ","otherGames":"เล่นเกมอื่น","retire":"ยอมแพ้","retry":"เล่นอีกครั้ง","finish":"กลับหน้าหลัก","back":"กลับ","copyHeading":"คัดลอกข้อความแชร์","copyHelp":"หากเปิด X ไม่ได้ ให้คัดลอกข้อความและลิงก์ไปโพสต์เอง","copyTextAria":"ข้อความและลิงก์ที่จะแชร์","copy":"คัดลอก","close":"ปิด","copied":"คัดลอกแล้ว โปรดตรวจสอบและโพสต์บน X","copyManual":"เลือกข้อความแล้วคัดลอกด้วยตนเอง","clipboardCopied":"คัดลอกไปยังคลิปบอร์ดแล้ว","copyFailed":"คัดลอกไม่ได้","rankingUnavailable":"ขณะนี้ใช้อันดับไม่ได้ ผลของคุณยังอยู่บนหน้าจอ","rankingSending":"กำลังส่งสถิติ…","rankingSendFailed":"ส่งสถิติไม่ได้ ผลของคุณยังอยู่บนหน้าจอ","rankingLoading":"กำลังโหลดอันดับ…","rankingSent":"ส่งสถิติแล้ว","rankingLoaded":"โหลดอันดับแล้ว","rankingLoadFailed":"โหลดอันดับไม่ได้ ผลของคุณยังอยู่บนหน้าจอ","unnamed":"ไม่มีชื่อ","noRecords":"ยังไม่มีสถิติ","nameDisclosure":"หากใส่ชื่อ ชื่อและสถิติของคุณจะเผยแพร่ในอันดับ คุณสามารถเว้นว่างแล้วเล่นได้","retrySend":"ลองส่งสถิติอีกครั้ง","retryRanking":"โหลดอันดับใหม่","guestResult":"คุณเล่นโดยไม่ใส่ชื่อ สถิตินี้จะไม่ถูกเผยแพร่","scorePending":"สถิติรอส่งอยู่ ระบบจะส่งผลเดิมอีกครั้งเมื่อเชื่อมต่อได้","soundOn":"เสียง: เปิด","soundOff":"เสียง: ปิด","volume":"ระดับเสียง","nameTitle":"ชื่อ (ไม่บังคับ ไม่เกิน 10 ตัวอักษร)","namePlaceholder":"ไม่เกิน 10 ตัวอักษร","nameTooLong":"ชื่อยาวได้ไม่เกิน 10 ตัวอักษร","nameAria":"ชื่อผู้เล่น","home":"กลับหน้าหลัก","rulesTitle":"วิธีเล่น","gameAria":"พื้นที่เล่นเกม","points":"{score} คะแนน","rankingTop30":"ผู้เล่น 30 อันดับแรก","rank":"อันดับ {rank}","waveEffect":"ระลอก {wave}","gameTitle":"มารอนโบยบิน","intro":"เก็บของรางวัลเพื่ออัปเกรดเครื่องบินและผ่านทั้ง 30 ระลอก","conceptFight":"🗡️ กำจัดศัตรู","conceptLoot":"🌰 อัปเกรดด้วยของรางวัล","conceptClear":"🏆 ผ่าน 30 ระลอก","goalTitle":"🎯 เป้าหมาย","goalRule":"กำจัดศัตรู เก็บของรางวัล และอัปเกรดเครื่องบินเพื่อผ่านทั้ง 30 ระลอก","controlsTitle":"🕹️ การควบคุม","controlsRule":"ลากบนหน้าจอเพื่อเคลื่อนเครื่องบิน เครื่องบินจะยิงอัตโนมัติ","lootRule":"นำเครื่องบินเข้าใกล้ของรางวัล (🌰) เพื่อเก็บ","upgradesTitle":"⬆️ การอัปเกรด","upgradesRule":"ของรางวัลให้ค่าประสบการณ์ ทุกครั้งที่เลเวลเพิ่มจะสุ่มรับหนึ่งใน 7 ประเภทอัปเกรด โดยไม่สุ่มประเภทที่เต็มแล้ว การอัปเกรดครั้งแรกจะเป็นประเภทโจมตี","wavesTitle":"👾 ระลอกศัตรู","wavesRule":"มีทั้งหมด 30 ระลอก บอสปรากฏทุก 5 ระลอก กำจัดบอสระลอกที่ 30 เพื่อชนะเกม","telegraphRule":"เส้นและวงกลมสีแดงของบอสเตือนการโจมตีที่กำลังมา ให้เคลื่อนไปยังจุดปลอดภัยขณะเห็นสัญญาณ","retireTitle":"🏳️ การยอมแพ้","retireRule":"กด ยอมแพ้ ที่มุมขวาบนเพื่อจบรอบก่อนเวลา รอบที่ยอมแพ้จะไม่ส่งคะแนนเข้าตารางอันดับ","ready":"พร้อม","go":"เริ่ม!","retireQuestion":"🏳️ ยอมแพ้หรือไม่?","retireWarning":"รอบนี้จะไม่ส่งคะแนนเข้าตารางอันดับ ต้องการยอมแพ้หรือไม่?","cancel":"ยกเลิก","clearTitle":"🎉 ผ่านแล้ว!","retiredTitle":"🏳️ ยอมแพ้แล้ว","gameOver":"💥 จบเกม","reached":"ความคืบหน้า","clearProgress":"ผ่าน 30 ระลอก","waveProgress":"ไปถึงระลอกที่ {wave}","finalLevel":"เลเวลสุดท้าย","kills":"ศัตรูที่กำจัด","loot":"ของรางวัลที่เก็บ","escaped":"ศัตรูที่หนีไป","lootLost":"ของรางวัลที่พลาด","retiredExcluded":"ยอมแพ้แล้ว: ไม่ส่งคะแนน","auditExcluded":"โหมดตรวจสอบ: ไม่ส่งคะแนนเข้าตารางอันดับ","auditInfo":"โหมดตรวจสอบ / seed: {seed}","bestUpdated":"🏅 สถิติส่วนตัวใหม่!","boss":"บอส","bossWarning":"⚠ บอสกำลังมา ⚠","bonus":"โบนัสคะแนน +1,000","levelUp":"เลเวลเพิ่ม! {upgrade}","upgrade_bullet":"กระสุน +1","upgrade_firerate":"เพิ่มความเร็วการยิง","upgrade_piercing":"กระสุนทะลุ","upgrade_shield":"โล่ +1","upgrade_maxhp":"ความทนทานสูงสุด +1","upgrade_collectrange":"เพิ่มระยะเก็บของ","upgrade_hitreduce":"ลดพื้นที่รับการโจมตี","shareDescription":"กำจัดศัตรู เก็บของรางวัล และอัปเกรดเครื่องบินผ่าน 30 ระลอกในเกมยิงเลื่อนฉากแนวตั้งนี้","shareResult":"{progress}\nคะแนน: {score}\nเลเวลสุดท้าย: {level}","storageFailed":"อุปกรณ์นี้บันทึกข้อมูลไม่ได้ เพื่อไม่ให้ผลหาย อย่าโหลดหน้าใหม่ ให้ลองอีกครั้งเมื่อสามารถบันทึกได้"}}</script>
+<script id="localization">
+(() => {
+  'use strict';
+  const catalogs = JSON.parse(document.getElementById('locale-catalogs').textContent);
+  const languageNames = {ja:'日本語',en:'English',es:'Español','pt-BR':'Português (Brasil)','zh-Hans':'简体中文',fr:'Français',de:'Deutsch',ko:'한국어',ru:'Русский',it:'Italiano','zh-Hant':'繁體中文',id:'Bahasa Indonesia',tr:'Türkçe',vi:'Tiếng Việt',th:'ไทย'};
+  const key = 'maron_hikou:language';
+  function normalize(value) {
+    const id=String(value||'').replaceAll('_','-').toLowerCase();
+    const exact=Object.keys(catalogs).find(lang=>lang.toLowerCase()===id);
+    if(exact)return exact;
+    if(id==='zh'||id.startsWith('zh-')){const parts=id.split('-');if(parts.includes('hans'))return 'zh-Hans';if(parts.includes('hant'))return 'zh-Hant';return parts.some(p=>['tw','hk','mo'].includes(p))?'zh-Hant':'zh-Hans';}
+    if(id==='pt'||id.startsWith('pt-'))return 'pt-BR';
+    const base=id.split('-')[0];return Object.hasOwn(catalogs,base)?base:null;
+  }
+  let saved=null;try{saved=localStorage.getItem(key);}catch{}
+  let language=normalize(saved)||(navigator.languages||[navigator.language]).map(normalize).find(Boolean)||'en';
+  const t=(name,params={})=>String(catalogs[language]?.[name]??catalogs.en[name]??name).replace(/\{(\w+)\}/g,(whole,id)=>Object.hasOwn(params,id)?String(params[id]):whole);
+  function render() {
+    document.documentElement.lang=language;
+    document.querySelectorAll('[data-i18n]').forEach(element=>{
+      let params={};try{params=JSON.parse(element.dataset.i18nParams||'{}');}catch{}
+      const value=t(element.dataset.i18n,params);
+      if(element.dataset.i18nAttr)element.setAttribute(element.dataset.i18nAttr,value);else element.textContent=value;
+    });
+    const select=document.getElementById('languageSelect');if(select)select.value=language;
+  }
+  function setLanguage(value) {
+    const next=normalize(value)||'en';if(next===language)return;
+    language=next;try{localStorage.setItem(key,language);}catch{}
+    render();window.dispatchEvent(new CustomEvent('gamelanguagechange'));
+  }
+  function text(element,name,params={}) {
+    element.dataset.i18n=name;element.dataset.i18nParams=JSON.stringify(params);element.textContent=t(name,params);
+  }
+  const select=document.getElementById('languageSelect');
+  if(select&&typeof document.createElement==='function'){
+    for(const [value,label] of Object.entries(languageNames)){const option=document.createElement('option');option.value=value;option.textContent=label;select.appendChild(option);}
+    select.addEventListener('change',()=>setLanguage(select.value));
+  }
+  window.gameI18n={t,text,render,setLanguage,normalize,get language(){return language;}};
+  render();
+})();
+</script>
+<script id="score-queue">
+(function (root) {
+  'use strict';
+  const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const copy = value => JSON.parse(JSON.stringify(value));
+  function createScoreQueue({gameSlug, scoreOrder = 'asc', storage = null, send, onChange = () => {}, uuid = () => root.crypto.randomUUID()}) {
+    if (!['asc','desc'].includes(scoreOrder)) throw new Error('Invalid score order');
+    const int4 = value => Number.isInteger(value) && value >= -2147483648 && value <= 2147483647;
+    const prefix = gameSlug + ':score-pending:v1:';
+    const memory = new Map(), conflicts = new Set();
+    let operation = null;
+    const same = (a,b) => ['p_submission_id','p_display_name','p_game_slug','p_score','p_client_version'].every(k=>a?.[k]===b?.[k]);
+    function valid(item) {
+      const p = item?.payload;
+      return UUID.test(item?.id || '') && p?.p_submission_id === item.id && p.p_game_slug === gameSlug &&
+        typeof p.p_display_name === 'string' && p.p_display_name.trim() !== '' &&
+        typeof p.p_client_version === 'string' && Number.isSafeInteger(p.p_score) && p.p_score >= 0 &&
+        ['pending','sending','rejected','submitted'].includes(item.state);
+    }
+    function reconcile(id, raw) {
+      if(raw===null)return;
+      let item;try{item=JSON.parse(raw);}catch{conflicts.add(id);return;}
+      if(!valid(item)||item.id!==id){conflicts.add(id);return;}
+      const old=memory.get(id);
+      if(old&&!same(old.payload,item.payload)){conflicts.add(id);return;}
+      if(!old || item.state==='submitted' || (item.state==='rejected'&&old.state!=='submitted'))memory.set(id,item);
+    }
+    function save(item) {
+      memory.set(item.id, copy(item));
+      try {
+        if(!storage)return false;
+        reconcile(item.id,storage.getItem(prefix+item.id));
+        if(conflicts.has(item.id))return false;
+        const known=memory.get(item.id);
+        if(known.state==='submitted'&&item.state!=='submitted')return false;
+        const raw=JSON.stringify(item);
+        storage.setItem(prefix+item.id,raw);
+        return storage.getItem(prefix+item.id)===raw;
+      } catch { return false; }
+    }
+    function list() {
+      try {
+        if (storage) for (let i = 0; i < storage.length; i++) {
+          const key = storage.key(i);
+          if (!key?.startsWith(prefix)) continue;
+          reconcile(key.slice(prefix.length),storage.getItem(key));
+        }
+      } catch { /* Retain all session records when storage cannot be read. */ }
+      return [...memory.values()].filter(item=>item.state!=='submitted').map(item=>({...copy(item),state:conflicts.has(item.id)?'conflict':item.state})).sort((a,b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id));
+    }
+    function notify(item, receipt = null) { try { onChange(copy(item), receipt && copy(receipt)); } catch {} }
+    function capture(name, clientVersion) {
+      if (!name?.trim()) return null;
+      try { const id = uuid(); if (!UUID.test(id)) return null; return Object.freeze({id, name:name.trim(), clientVersion}); }
+      catch { return null; }
+    }
+    function enqueue(play, score, presentation = null) {
+      if (!play) return null;
+      list();
+      if(conflicts.has(play.id))throw new Error('Conflicting saved play; original data preserved');
+      const existing = memory.get(play.id);
+      const payload = {p_submission_id:play.id,p_display_name:play.name,p_game_slug:gameSlug,p_score:score,p_client_version:play.clientVersion};
+      if (existing) {
+        if (!same(existing.payload,payload)) throw new Error('A finalized play cannot change');
+        return copy(existing);
+      }
+      const item = {id:play.id,payload,presentation:copy(presentation),createdAt:Date.now(),state:'pending'};
+      if (!valid(item)) throw new Error('Invalid finalized score');
+      const persisted=save(item);notify({...item,persisted});return {...copy(item),persisted};
+    }
+    function drain() {
+      if (operation) return operation;
+      operation = (async () => {
+        const attempted = new Set();
+        for (;;) {
+          const item = list().find(value => !attempted.has(value.id) && !['rejected','conflict'].includes(value.state));
+          if (!item) break;
+          attempted.add(item.id);item.state='sending';
+          if(!save(item)){item.state='pending';if(!conflicts.has(item.id)&&memory.get(item.id)?.state!=='submitted')memory.set(item.id,copy(item));notify({...item,persisted:false});continue;}
+          notify({...item,persisted:true});
+          try {
+            const response = await send(copy(item.payload));
+            if(!Array.isArray(response)||response.length!==1)throw new Error('Invalid score acknowledgement');
+            const receipt = response[0];
+            if (receipt?.accepted === false) { const error=new Error('Score rejected');error.code='PT422';throw error; }
+            if (receipt?.accepted !== true) throw new Error('Invalid score acknowledgement');
+            if (receipt.result_display_name !== item.payload.p_display_name || receipt.result_normalized_name !== item.payload.p_display_name || !int4(receipt.result_first_score) || !int4(receipt.result_best_score) || !int4(receipt.result_play_count) || receipt.result_play_count < 1 || !['was_duplicate','is_first_play','is_new_best'].every(k=>typeof receipt[k]==='boolean')) throw new Error('Invalid score acknowledgement');
+            // The normal SQL receipt includes this submitted score in its best.
+            if (scoreOrder === 'asc' ? receipt.result_best_score > item.payload.p_score : receipt.result_best_score < item.payload.p_score) throw new Error('Invalid score acknowledgement');
+            list();
+            if(conflicts.has(item.id)){notify({...item,state:'conflict'});continue;}
+            item.state='submitted';
+            save(item); // Keep a tombstone. Never recreate a completed receipt on a repeated result callback.
+            notify(item, receipt);
+          } catch (error) {
+            list();
+            if(conflicts.has(item.id)||memory.get(item.id)?.state==='submitted')continue;
+            item.state = ['PT409','PT422','22023','22001','22003'].includes(error?.code) ? 'rejected' : 'pending';
+            const persisted=save(item);notify({...item,persisted});
+          }
+        }
+      })().finally(() => { operation=null; });
+      return operation;
+    }
+    return {capture,enqueue,list,drain,prefix};
+  }
+  const api={createScoreQueue};
+  if (typeof module === 'object' && module.exports) module.exports=api;
+  root.CommonScoreQueue=api;
+})(typeof globalThis === 'object' ? globalThis : this);
+</script>
+<script>
+(() => {
+  'use strict';
+  const dialog = document.getElementById('commonShareFallback');
+  const field = document.getElementById('commonShareText');
+  const status = document.getElementById('commonShareStatus');
+  window.openGameShareX = (text) => {
+    const body = String(text);
+    const intent = new URL('https://x.com/intent/post');
+    intent.searchParams.set('text', body);
+    let popup;
+    try {
+      popup = window.open('', '_blank');
+      if (popup) {
+        popup.opener = null;
+        popup.location.replace(intent.href);
+        return;
+      }
+    } catch (_) {
+      try { if (popup) popup.close(); } catch (_) {}
+    }
+    field.value = body;
+    status.textContent = '';delete status.dataset.i18n;
+    if (!dialog.open) dialog.showModal();
+    field.focus();
+    field.select();
+  };
+  document.getElementById('commonShareCopy').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(field.value);
+      window.gameI18n.text(status,'copied');
+    } catch (_) {
+      field.focus();
+      field.select();
+      window.gameI18n.text(status,'copyManual');
+    }
+  });
+  document.getElementById('commonShareClose').addEventListener('click', () => dialog.close());
+})();
+</script>
+
+<script>
     // ===== [A] 定数・設定値 =====
 
     const GAME_SLUG = 'maron_hikou';
-    const CLIENT_VERSION = 'v1';
+    const CLIENT_VERSION = '2026-10-31-common-v1';
+    const {t}=window.gameI18n;
+    const message=(key,params={})=>({key,params});
+    function labelText(label){return typeof label==='object'?t(label.key,label.upgradeId?{upgrade:t('upgrade_'+label.upgradeId)}:label.params):label}
     const GAME_URL = 'https://chameleonjp.codeberg.page/maron_hikou/';
     const LAB_URL = 'https://chameleonjp-lab.github.io/chameleonjp_lab/';
     const CANVAS_LOGIC_WIDTH = 400;
@@ -1008,7 +1191,7 @@
     // Supabase 接続情報(docs/ranking-spec.md 共通仕様。Publishable key は公開可)
     const SUPABASE_URL = 'https://mlpnjgezrnhdxsxolyzj.supabase.co';
     const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_drzcy0v97knU6FgjqSgBHw_0A9XPdFM';
-    const RANKING_LIMIT = 10;   // 結果画面下部ランキングの表示件数 (§26)
+    const RANKING_LIMIT = 30;   // 結果画面下部ランキングの表示件数 (§26)
 
     // スコア点数表 (§23)
     const SCORE_TABLE = {
@@ -1284,7 +1467,7 @@
 
     // ===== [B] 画面遷移マネージャ =====
 
-    const SCREENS = ['home', 'name', 'countdown', 'game', 'result'];
+    const SCREENS = ['home', 'countdown', 'game', 'result'];
 
     /**
      * 指定した画面を active にし、他を非表示にする
@@ -1621,6 +1804,7 @@
      * わずかに外側の弾へ外向き角度を付ける。貫通中は pierceLeft を持たせる。
      */
     function firePlayerBullets() {
+      playSound('shot');
       const n = player.bulletCount;
       // 中心対称に並べるためのオフセット列 (例 n=1 → [0], n=2 → [-0.5,0.5], n=3 → [-1,0,1])
       const startOffset = -(n - 1) / 2;
@@ -2057,6 +2241,7 @@
     function collectLoot(l) {
       if (l.dead) return;
       l.dead = true;
+      playSound('collect');
       gameState.lootCount++;
       addScore(SCORE_TABLE.LOOT);
       if (gameState.level < MAX_LEVEL) {
@@ -2224,6 +2409,7 @@
     function killEnemy(e) {
       if (e.dead) return;
       e.dead = true;
+      playSound('kill');
       gameState.kills++;
       addScore(e.score);
       spawnExplosion(e.x, e.y, e.r * 1.6);
@@ -2243,6 +2429,7 @@
       } else {
         gameState.hp -= 1;
       }
+      playSound('hit');
       player.invincibleUntil = gameTime + 1.2;
       spawnExplosion(player.x, player.y, 30);
 
@@ -2446,7 +2633,7 @@
       ctx.textAlign = 'left';
       ctx.textBaseline = 'bottom';
       ctx.fillStyle = '#ffd0d0';
-      ctx.fillText('BOSS', x, y - 2);
+      ctx.fillText(t('boss'), x, y - 2);
       ctx.restore();
     }
 
@@ -2489,10 +2676,10 @@
         // 縁取り(視認性確保)
         ctx.lineWidth = 4;
         ctx.strokeStyle = 'rgba(0,0,0,0.75)';
-        ctx.strokeText(ft.label, CANVAS_LOGIC_WIDTH / 2, y);
+        ctx.strokeText(labelText(ft.label), CANVAS_LOGIC_WIDTH / 2, y, CANVAS_LOGIC_WIDTH-24);
         // ボス予告は赤、それ以外は金色
-        ctx.fillStyle = (ft.kind === 'wave' && /BOSS/.test(ft.label)) ? '#ff7070' : '#ffe88a';
-        ctx.fillText(ft.label, CANVAS_LOGIC_WIDTH / 2, y);
+        ctx.fillStyle = (ft.kind === 'wave' && ft.label?.key==='bossWarning') ? '#ff7070' : '#ffe88a';
+        ctx.fillText(labelText(ft.label), CANVAS_LOGIC_WIDTH / 2, y, CANVAS_LOGIC_WIDTH-24);
       }
       ctx.restore();
     }
@@ -2924,7 +3111,7 @@
       const c = _hudCache;
 
       if (c.wave !== gameState.wave) {
-        document.getElementById('hud-wave').textContent = 'W' + gameState.wave;
+        document.getElementById('hud-wave').textContent = t('waveEffect',{wave:gameState.wave});
         c.wave = gameState.wave;
       }
       if (c.score !== gameState.score) {
@@ -2986,9 +3173,9 @@
         pendingNext: 0
       };
       // ウェーブ開始表示(§10)。1.2 秒。
-      pushWaveText('WAVE ' + waveNo, 1.2);
+      pushWaveText(message('waveEffect',{wave:waveNo}), 1.2);
       if (conf.isBoss) {
-        pushWaveText('⚠ BOSS ⚠', 1.6);
+        pushWaveText(message('bossWarning'), 1.6);playSound('boss');
       }
     }
 
@@ -3056,6 +3243,7 @@
 
       // 次ウェーブへ移行(1.5 秒待機)
       waveState.active = false;
+      playSound('wave');
       waveState.pendingNext = waveNo + 1;
       waveState.nextTimer = 1.5;
     }
@@ -3106,7 +3294,7 @@
       if (candidates.length === 0) {
         // 全強化上限 → スコアボーナス (§19)
         addScore(1000);
-        pushLevelUpText('スコアボーナス +1,000');
+        pushLevelUpText(message('bonus'));playSound('level');
         return;
       }
 
@@ -3128,7 +3316,7 @@
       const pick = pool[Math.floor(gameRandom() * pool.length)];
       applyUpgrade(pick.id);
       gameState.upgradeCounts[pick.id]++;
-      pushLevelUpText('LEVEL UP! ' + pick.label);
+      pushLevelUpText({key:'levelUp',upgradeId:pick.id});playSound('level');
     }
 
     /**
@@ -3300,232 +3488,42 @@
      * @returns {string}
      */
     function progressToLabel(progress) {
-      if (progress >= 31) return '30波クリア';
-      return progress + '波到達';
+      return progress>=31?t('clearProgress'):t('waveProgress',{wave:progress});
     }
 
     /**
      * 結果画面を表示・更新する
      */
+    const RESULT_KEY='maron_hikou:result:v1';
+    let rankingGeneration=0,rankingRows=[],rankingReadState='idle';
+    let scoreStorage=null;try{scoreStorage=localStorage}catch{}
+    const scoreQueue=CommonScoreQueue.createScoreQueue({gameSlug:GAME_SLUG,scoreOrder:'desc',storage:scoreStorage,send:payload=>supabaseRpc('submit_score_once_shared_v1',payload),onChange(item){
+      if(gameState.play?.id===item.id&&gameState.finalized){if(typeof item.persisted==='boolean')gameState.storageFailed=!item.persisted;gameState.submitStatus=item.state==='pending'&&gameState.submitStatus==='sending'?'failed':item.state;saveResult();renderSubmission();if(item.state==='submitted'&&document.getElementById('screen-result').classList.contains('active'))fetchRanking()}
+      renderPending();
+    }});
+    function saveResult(){if(!gameState.finalized)return;try{localStorage.setItem(RESULT_KEY,JSON.stringify(gameState))}catch{gameState.storageFailed=true}}
+    function restoreResult(){let saved;try{saved=JSON.parse(localStorage.getItem(RESULT_KEY))}catch{return false}if(!saved||saved.finalized!==true||!Number.isInteger(saved.score)||saved.score<0||saved.score>9999999||!Number.isInteger(saved.wave)||saved.wave<1||saved.wave>30||!Number.isInteger(saved.level)||saved.level<1||saved.level>12||['kills','lootCount','escapedCount','lootLostCount'].some(key=>!Number.isInteger(saved[key])||saved[key]<0)||['auditMode','isRetired','isCleared'].some(key=>typeof saved[key]!=='boolean')||typeof saved.playerName!=='string')return false;if(saved.isCleared&&(saved.wave!==30||saved.isRetired))return false;if(saved.play!=null&&(!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(saved.play.id||'')||saved.play.name!==saved.playerName||typeof saved.play.clientVersion!=='string'))return false;gameState=saved;if(gameState.submitStatus==='sending')gameState.submitStatus='pending';renderResult();showScreen('result');fetchRanking();return true}
+    function renderPending(){const pending=scoreQueue.list().filter(item=>item.state!=='rejected'),button=document.getElementById('pendingRetryBtn');button.hidden=!pending.length;button.disabled=pending.some(item=>item.state==='sending')}
+    function renderSubmission(){const key=gameState.isRetired?'retiredExcluded':gameState.auditMode?'auditExcluded':({guest:'guestResult',pending:'scorePending',sending:'rankingSending',submitted:'rankingSent',failed:'rankingSendFailed',rejected:'rankingSendFailed'}[gameState.submitStatus]||'rankingSendFailed');document.getElementById('submit-status').textContent=t(gameState.storageFailed?'storageFailed':key);const retry=document.getElementById('retrySendBtn');retry.hidden=!(gameState.play&&!gameState.isRetired&&!gameState.auditMode&&['pending','failed'].includes(gameState.submitStatus));retry.disabled=gameState.submitStatus==='sending'}
     function showResultScreen() {
-      // タイトル
-      const titleEl = document.getElementById('result-title');
-      titleEl.textContent = gameState.isCleared ? '🎉 クリア!' : gameState.isRetired ? '🏳️ リタイア' : '💥 ゲームオーバー';
-
-      // 到達状況
-      const waveText = gameState.isCleared ? '30波クリア' : gameState.wave + '波到達';
-      document.getElementById('result-wave-text').textContent = waveText;
-
-      // スコア
-      document.getElementById('result-score-text').textContent = formatScore(gameState.score) + '点';
-
-      // 詳細
-      document.getElementById('result-lv').textContent       = 'Lv.' + gameState.level;
-      document.getElementById('result-kills').textContent     = gameState.kills + '機';
-      document.getElementById('result-loots').textContent     = gameState.lootCount + '個';
-      document.getElementById('result-escaped').textContent   = gameState.escapedCount + '機';
-      document.getElementById('result-loot-lost').textContent = gameState.lootLostCount + '個';
-
-      // 送信状態 (§27/§28)
-      document.getElementById('submit-status').textContent =
-        gameState.isRetired ? 'リタイアのため送信なし' :
-        gameState.auditMode ? '監査モードのためランキング送信なし' : '';
-
-      // 監査モードでは、同じURLを開いたことを結果画面で確認できる。
-      const runInfoEl = document.getElementById('result-run-info');
-      if (gameState.auditMode && gameState.seed !== null) {
-        runInfoEl.textContent = '監査モード / seed: ' + gameState.seed;
-        runInfoEl.classList.add('visible');
-      } else {
-        runInfoEl.textContent = '';
-        runInfoEl.classList.remove('visible');
+      if(!gameState.finalized){
+        gameState.finalized=true;gameState.submitStatus=gameState.isRetired||gameState.auditMode?'excluded':gameState.play?'pending':gameState.playerName?'failed':'guest';gameState.bestUpdated=false;
+        if(!gameState.isRetired&&!gameState.auditMode){try{const best=parseInt(localStorage.getItem(BEST_SCORE_KEY)||'0',10)||0,score=buildRankingScore();if(score>best){localStorage.setItem(BEST_SCORE_KEY,String(score));gameState.bestUpdated=best>0}}catch{}}
+        saveResult();if(gameState.play&&!gameState.isRetired&&!gameState.auditMode){try{scoreQueue.enqueue(gameState.play,buildRankingScore(),gameState);scoreQueue.drain()}catch{gameState.submitStatus='failed';saveResult()}}
+        playSound(gameState.bestUpdated?'best':gameState.isCleared?'clear':'end');
       }
-
-      // ベスト更新 (§26)。監査モードとリタイアは通常の自己ベストへ反映しない。
-      const bestEl = document.getElementById('result-best-update');
-      bestEl.textContent = '';
-      if (!gameState.isRetired && !gameState.auditMode) {
-        const rs = buildRankingScore();
-        const prevBest = parseInt(localStorage.getItem(BEST_SCORE_KEY) || '0', 10) || 0;
-        if (rs > prevBest) {
-          localStorage.setItem(BEST_SCORE_KEY, String(rs));
-          if (prevBest > 0) bestEl.textContent = '🏅 最高到達更新!';
-        }
-      }
-
-      showScreen('result');
-
-      // ランキング送信(自動・1回のみ)と上位10件の取得 (§26/§27)
-      submitScore();
-      fetchRanking();
+      renderResult();showScreen('result');fetchRanking();
     }
-
-    // ===== [I] Supabase 連携 =====
-
-    /**
-     * Supabase RPC を呼ぶ(PostgREST)。10秒でタイムアウト。
-     * @param {string} fnName RPC 名
-     * @param {object} body 引数
-     * @returns {Promise<any>} レスポンス JSON(空ボディは null)
-     */
-    async function supabaseRpc(fnName, body) {
-      const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
-      const timer = ctrl ? setTimeout(() => ctrl.abort(), 10000) : null;
-      try {
-        const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + fnName, {
-          method: 'POST',
-          headers: {
-            'apikey': SUPABASE_PUBLISHABLE_KEY,
-            'Authorization': 'Bearer ' + SUPABASE_PUBLISHABLE_KEY,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(body),
-          signal: ctrl ? ctrl.signal : undefined
-        });
-        if (!res.ok) throw new Error('Supabase RPC failed: ' + res.status);
-        const text = await res.text();
-        return text ? JSON.parse(text) : null;
-      } finally {
-        if (timer) clearTimeout(timer);
-      }
+    function renderResult(){
+      document.getElementById('result-title').textContent=t(gameState.isCleared?'clearTitle':gameState.isRetired?'retiredTitle':'gameOver');document.getElementById('result-wave-text').textContent=progressToLabel(gameState.isCleared?31:gameState.wave);document.getElementById('result-score-text').textContent=t('points',{score:formatScore(gameState.score)});document.getElementById('result-lv').textContent='Lv.'+gameState.level;
+      for(const [id,key] of [['result-kills','kills'],['result-loots','lootCount'],['result-escaped','escapedCount'],['result-loot-lost','lootLostCount']])document.getElementById(id).textContent=formatScore(gameState[key]);
+      const info=document.getElementById('result-run-info');info.textContent=gameState.auditMode?t('auditInfo',{seed:gameState.seed}):'';info.classList.toggle('visible',gameState.auditMode);document.getElementById('result-best-update').textContent=gameState.bestUpdated?t('bestUpdated'):'';renderSubmission();renderRanking();
     }
-
-    /**
-     * ランキングスコアを Supabase へ自動送信する (§27/§31)。
-     *  - リタイア時は送信しない (§28)。
-     *  - scoreSent フラグで二重送信を防止(結果画面の再表示・連打でも1回だけ)。
-     *  - 送信値は合成 ranking_score(画面には出さない)。
-     */
-    async function submitScore() {
-      if (gameState.isRetired) return;
-      if (gameState.auditMode) return;
-      if (gameState.scoreSent) return;
-      gameState.scoreSent = true;   // 先にフラグを立てて再入・連打を防ぐ
-
-      const statusEl = document.getElementById('submit-status');
-      const displayName = (localStorage.getItem(PLAYER_NAME_KEY) || '').trim();
-      if (!displayName) {
-        // 名前入力必須のため通常起こらない(保険)
-        statusEl.textContent = 'ランキング送信失敗(名前未設定)';
-        return;
-      }
-
-      statusEl.textContent = 'ランキング送信中...';
-      try {
-        await supabaseRpc('submit_score', {
-          p_display_name: displayName,
-          p_game_slug: GAME_SLUG,
-          p_score: buildRankingScore(),
-          p_client_version: CLIENT_VERSION
-        });
-        statusEl.textContent = 'ランキング送信成功';
-      } catch (err) {
-        // 失敗してもゲーム結果は見える (§27)。再送はしない(二重送信防止優先)
-        statusEl.textContent = 'ランキング送信失敗';
-      }
-    }
-
-    /**
-     * ランキング上位10件を取得して結果画面下部に表示する (§24/§26)。
-     * 取得 RPC のシグネチャは環境差に備えて防御的に呼ぶ:
-     *  1. { p_game_slug, p_limit } → 失敗したら 2. { p_game_slug } のみ。
-     */
-    async function fetchRanking() {
-      const listEl = document.getElementById('ranking-list');
-      listEl.innerHTML = '<div class="ranking-loading">読み込み中...</div>';
-      try {
-        let rows;
-        try {
-          rows = await supabaseRpc('get_best_score_ranking', { p_game_slug: GAME_SLUG, p_limit: RANKING_LIMIT });
-        } catch (e) {
-          rows = await supabaseRpc('get_best_score_ranking', { p_game_slug: GAME_SLUG });
-        }
-        renderRanking(Array.isArray(rows) ? rows : []);
-      } catch (err) {
-        listEl.textContent = '';
-        const div = document.createElement('div');
-        div.className = 'ranking-loading';
-        div.textContent = 'ランキングを取得できませんでした';
-        listEl.appendChild(div);
-      }
-    }
-
-    /**
-     * ランキング行を描画する (§24〜§26)。
-     *  - 内部 ranking_score は表示せず「17波到達 184,500点」形式へ復元する (§31)。
-     *  - 同点は同率順位(1位・1位・3位)。RPC が rank_no を返す場合はそれを優先する (§25)。
-     *  - 表示名は textContent で挿入(他プレイヤー名による HTML 注入を防ぐ)。
-     * @param {Array<object>} rows RPC の戻り値
-     */
-    function renderRanking(rows) {
-      const listEl = document.getElementById('ranking-list');
-      listEl.textContent = '';
-
-      const myName = (localStorage.getItem(PLAYER_NAME_KEY) || '').trim();
-
-      // 戻り値のキー名の揺れを許容して正規化
-      const items = rows.map(function (r) {
-        const name = r.display_name != null ? r.display_name
-                   : r.player_name != null ? r.player_name
-                   : r.name != null ? r.name : '???';
-        const rsRaw = r.score != null ? r.score
-                    : r.best_score != null ? r.best_score
-                    : r.ranking_score != null ? r.ranking_score : NaN;
-        const rs = Number(rsRaw);
-        const rankNo = r.rank_no != null ? Number(r.rank_no) : null;
-        return { name: String(name), rs: rs, rankNo: rankNo };
-      }).filter(function (it) { return Number.isFinite(it.rs); });
-
-      // 大きいほど上位 (score_order=desc)。RPC が整列済みでも保険で並べ直す
-      items.sort(function (a, b) { return b.rs - a.rs; });
-      const top = items.slice(0, RANKING_LIMIT);
-
-      if (top.length === 0) {
-        const div = document.createElement('div');
-        div.className = 'ranking-loading';
-        div.textContent = 'まだ記録がありません';
-        listEl.appendChild(div);
-        return;
-      }
-
-      let prevRs = null;
-      let prevRank = 0;
-      top.forEach(function (it, i) {
-        // 同率順位: 同じ ranking_score は同順位、次は人数分飛ぶ (§25)
-        let rank;
-        if (it.rankNo != null) {
-          rank = it.rankNo;
-        } else if (it.rs === prevRs) {
-          rank = prevRank;
-        } else {
-          rank = i + 1;
-        }
-        prevRs = it.rs;
-        prevRank = rank;
-
-        const parsed = parseRankingScore(it.rs);
-
-        const item = document.createElement('div');
-        item.className = 'ranking-item' + (it.name === myName ? ' is-you' : '');
-
-        const rankEl = document.createElement('span');
-        rankEl.className = 'rank-no' + (rank === 1 ? ' gold' : rank === 2 ? ' silver' : rank === 3 ? ' bronze' : '');
-        rankEl.textContent = rank + '位';
-
-        const nameEl = document.createElement('span');
-        nameEl.className = 'rank-name';
-        nameEl.textContent = it.name;
-
-        const resultEl = document.createElement('span');
-        resultEl.className = 'rank-result';
-        resultEl.textContent = progressToLabel(parsed.progress) + ' ' + formatScore(parsed.displayScore) + '点';
-
-        item.appendChild(rankEl);
-        item.appendChild(nameEl);
-        item.appendChild(resultEl);
-        listEl.appendChild(item);
-      });
-    }
+    // ===== [I] Supabase: stable receipt IDs and server-aggregated rankings =====
+    async function supabaseRpc(fnName,body){const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),10000);try{const res=await fetch(SUPABASE_URL+'/rest/v1/rpc/'+fnName,{method:'POST',headers:{apikey:SUPABASE_PUBLISHABLE_KEY,Authorization:'Bearer '+SUPABASE_PUBLISHABLE_KEY,'Content-Type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal});const text=await res.text();if(!res.ok){const error=new Error('RPC failed');try{error.code=JSON.parse(text).code}catch{}throw error}return text?JSON.parse(text):null}finally{clearTimeout(timer)}}
+    function validateRanking(rows){if(!Array.isArray(rows)||rows.some(row=>!row||!Number.isInteger(row.rank_no)||row.rank_no<1||typeof row.display_name!=='string'||!Number.isInteger(row.best_score)||row.best_score<0))throw new Error('Invalid ranking response');return rows.slice(0,RANKING_LIMIT)}
+    async function fetchRanking(){const generation=++rankingGeneration,run=gameState;rankingReadState='loading';renderRanking();try{const rows=validateRanking(await supabaseRpc('get_best_score_ranking',{p_game_slug:GAME_SLUG,p_limit:RANKING_LIMIT}));if(generation!==rankingGeneration||gameState!==run)return;rankingRows=rows;rankingReadState=rows.length?'loaded':'empty'}catch{if(generation!==rankingGeneration||gameState!==run)return;rankingReadState='failed'}renderRanking()}
+    function renderRanking(){const list=document.getElementById('ranking-list');list.replaceChildren();document.getElementById('rankingReadStatus').textContent=t({idle:'rankingLoading',loading:'rankingLoading',loaded:'rankingLoaded',empty:'noRecords',failed:'rankingLoadFailed'}[rankingReadState]);document.getElementById('retryRankingBtn').disabled=rankingReadState==='loading';if(rankingReadState!=='loaded')return;for(const row of rankingRows){const item=document.createElement('div'),rank=document.createElement('span'),name=document.createElement('span'),score=document.createElement('span');item.className='ranking-item';rank.className='rank-no';name.className='rank-name';score.className='rank-result';rank.textContent=t('rank',{rank:row.rank_no});name.textContent=row.display_name;const parsed=parseRankingScore(row.best_score);score.textContent=progressToLabel(parsed.progress)+' '+t('points',{score:formatScore(parsed.displayScore)});item.append(rank,name,score);list.appendChild(item)}}
 
     // ===== [J] シェア =====
 
@@ -3533,51 +3531,20 @@
      * 文字列をシェア or クリップボードコピー
      * @param {string} text
      */
-    async function shareText(text) {
-      if (navigator.share) {
-        try {
-          await navigator.share({ text });
-          return;
-        } catch (e) {
-          // ユーザーキャンセルは無視
-          if (e.name === 'AbortError') return;
-        }
-      }
-      // フォールバック: クリップボードコピー
-      try {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(text);
-        } else {
-          // 旧来の方法
-          const ta = document.createElement('textarea');
-          ta.value = text;
-          ta.style.position = 'fixed';
-          ta.style.opacity = '0';
-          document.body.appendChild(ta);
-          ta.focus();
-          ta.select();
-          document.execCommand('copy');
-          document.body.removeChild(ta);
-        }
-        showToast('コピーしました!');
-      } catch (e) {
-        showToast('コピーできませんでした');
-      }
-    }
+    function shareText(text) { window.openGameShareX(text); }
 
     /**
      * ゲーム紹介シェア文 (§29)
      */
     function getIntroShareText() {
-      return `マロン飛行\n敵を倒して戦利品を集め、機体を強化しながら30波突破を目指す縦スクロール飛行機シューティングです。\n${GAME_URL}`;
+      return t('gameTitle')+'\n'+t('shareDescription')+'\n'+GAME_URL;
     }
 
     /**
      * 結果シェア文 (§29)
      */
     function getResultShareText() {
-      const waveLabel = gameState.isCleared ? '30波クリア' : gameState.wave + '波到達';
-      return `マロン飛行\n${waveLabel}\nスコア:${formatScore(gameState.score)}点\n最終Lv:${gameState.level}\n敵を倒して戦利品を集め、機体を強化しながら30波突破を目指す縦スクロール飛行機シューティングです。\n${GAME_URL}`;
+      return t('gameTitle')+'\n'+t('shareResult',{progress:progressToLabel(gameState.isCleared?31:gameState.wave),score:formatScore(gameState.score),level:gameState.level})+'\n'+GAME_URL;
     }
 
     // ===== ユーティリティ =====
@@ -3588,7 +3555,7 @@
      * @returns {string}
      */
     function formatScore(n) {
-      return n.toLocaleString('ja-JP');
+      return n.toLocaleString(window.gameI18n.language==='zh-Hans'?'zh-CN':window.gameI18n.language==='zh-Hant'?'zh-TW':window.gameI18n.language);
     }
 
     /**
@@ -3663,6 +3630,7 @@
      */
     function runCountdown() {
       showScreen('countdown');
+      const run=gameState;
       const numEl = document.getElementById('countdown-number');
       const steps = [
         { text: '3', wait: 1000 },
@@ -3673,13 +3641,14 @@
       let i = 0;
 
       function step() {
+        if(gameState!==run||!document.getElementById('screen-countdown').classList.contains('active'))return;
         if (i >= steps.length) {
           showScreen('game');
           resizeCanvas();
           startGame();
           return;
         }
-        numEl.textContent = steps[i].text;
+        if(steps[i].text==='GO'){numEl.dataset.i18n='go';numEl.textContent=t('go')}else{delete numEl.dataset.i18n;numEl.textContent=steps[i].text}playSound('start');
         // pop アニメーション
         numEl.classList.remove('pop');
         void numEl.offsetWidth; // reflow
@@ -3690,114 +3659,29 @@
       step();
     }
 
-    // ===== ホーム画面のイベント =====
-
-    document.getElementById('btn-start').addEventListener('click', function() {
-      showScreen('name');
-      // 保存済みの名前を復元
-      const saved = localStorage.getItem(PLAYER_NAME_KEY) || '';
-      document.getElementById('player-name-input').value = saved;
-      document.getElementById('name-error').textContent = '';
-    });
-
-    document.getElementById('btn-rules').addEventListener('click', function() {
-      document.getElementById('rules-modal').classList.add('open');
-    });
-
-    document.getElementById('btn-rules-close').addEventListener('click', function() {
-      document.getElementById('rules-modal').classList.remove('open');
-    });
-
-    // モーダル外クリックで閉じる
-    document.getElementById('rules-modal').addEventListener('click', function(e) {
-      if (e.target === this) this.classList.remove('open');
-    });
-
-    document.getElementById('btn-share-home').addEventListener('click', function() {
-      shareText(getIntroShareText());
-    });
-
-    // ===== 名前入力画面のイベント =====
-
-    document.getElementById('btn-name-start').addEventListener('click', function() {
-      const input = document.getElementById('player-name-input');
-      const name  = input.value.trim();
-      const errorEl = document.getElementById('name-error');
-      if (!name) {
-        errorEl.textContent = '名前を入力してください';
-        input.focus();
-        return;
-      }
-      errorEl.textContent = '';
-      localStorage.setItem(PLAYER_NAME_KEY, input.value.trim());
-      resetGameState();
-      runCountdown();
-    });
-
-    document.getElementById('btn-name-back').addEventListener('click', function() {
-      showScreen('home');
-    });
-
-    // Enter キーで開始
-    document.getElementById('player-name-input').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') {
-        document.getElementById('btn-name-start').click();
-      }
-    });
-
-    // ===== ゲーム画面のイベント =====
-
-    document.getElementById('btn-retire').addEventListener('click', function() {
-      document.getElementById('retire-modal').classList.add('open');
-    });
-
-    document.getElementById('btn-retire-cancel').addEventListener('click', function() {
-      document.getElementById('retire-modal').classList.remove('open');
-    });
-
-    document.getElementById('btn-retire-ok').addEventListener('click', function() {
-      document.getElementById('retire-modal').classList.remove('open');
-      if (animFrameId) {
-        cancelAnimationFrame(animFrameId);
-        animFrameId = null;
-      }
-      gameState.isRetired = true;
-      showResultScreen();
-    });
-
-    // リタイアモーダル外クリックで閉じる
-    document.getElementById('retire-modal').addEventListener('click', function(e) {
-      if (e.target === this) this.classList.remove('open');
-    });
-
-    // Canvas でのポインタイベント登録(Phase 2 で本体実装)
-    const gameCanvas = document.getElementById('game-canvas');
-    gameCanvas.addEventListener('pointerdown', onPointerDown, { passive: false });
-    gameCanvas.addEventListener('pointermove', onPointerMove, { passive: false });
-    gameCanvas.addEventListener('pointerup',   onPointerUp,   { passive: false });
-    gameCanvas.addEventListener('pointercancel', onPointerUp, { passive: false });
-
-    // ===== 結果画面のイベント =====
-
-    document.getElementById('btn-retry').addEventListener('click', function() {
-      showScreen('name');
-      const saved = localStorage.getItem(PLAYER_NAME_KEY) || '';
-      document.getElementById('player-name-input').value = saved;
-      document.getElementById('name-error').textContent = '';
-    });
-
-    document.getElementById('btn-share-result').addEventListener('click', function() {
-      shareText(getResultShareText());
-    });
-
-    document.getElementById('btn-home').addEventListener('click', function() {
-      showScreen('home');
-    });
-
-    // ===== 初期表示 =====
-
-    // 最初はホーム画面を表示
-    showScreen('home');
+    // Common controls keep settings and finalized scores separate from run-only upgrades.
+    const $=id=>document.getElementById(id);
+    let soundEnabled=true,soundVolume=.5,audioContext=null;
+    try{soundEnabled=localStorage.getItem('maron_hikou:sound')!=='off';const saved=localStorage.getItem('maron_hikou:volume'),n=Number(saved);if(saved!==null&&saved.trim()!==''&&Number.isFinite(n)&&n>=0&&n<=1)soundVolume=n}catch{}
+    const voices=new Set(),soundTimes=new Map();let lastSoundAt=-Infinity,lastSoundPriority=0;
+    const SOUND={start:[523,.08,'sine',.045,2],shot:[360,.025,'sine',.012,0],kill:[220,.05,'triangle',.025,1],collect:[880,.045,'sine',.04,2],hit:[120,.12,'triangle',.06,4],level:[1047,.14,'sine',.06,4],boss:[164,.18,'triangle',.045,3],wave:[784,.12,'sine',.05,3],clear:[1175,.23,'sine',.07,5],end:[196,.19,'sine',.06,5],best:[1319,.25,'sine',.07,5],select:[660,.04,'sine',.035,2],cancel:[330,.05,'sine',.03,2]};
+    function renderSound(){$('soundToggle').textContent=t(soundEnabled?'soundOn':'soundOff');$('soundToggle').setAttribute('aria-pressed',String(soundEnabled));$('soundVolume').value=String(soundVolume)}
+    function saveSound(){try{localStorage.setItem('maron_hikou:sound',soundEnabled?'on':'off');localStorage.setItem('maron_hikou:volume',String(soundVolume))}catch{}renderSound()}
+    function stopAudio(){for(const voice of [...voices]){try{voice.osc.stop()}catch{}voice.cleanup()}voices.clear()}
+    function unlockAudio(){if(!soundEnabled||soundVolume===0||document.hidden)return;try{if(!audioContext){audioContext=new (window.AudioContext||window.webkitAudioContext)();audioContext.onstatechange=()=>{if(audioContext.state!=='running')stopAudio()};}if(audioContext.state!=='running')audioContext.resume()?.catch(()=>{})}catch{}}
+    function playSound(kind){if(!soundEnabled||soundVolume===0||document.hidden)return;if(!audioContext||audioContext.state!=='running'){unlockAudio();return}const config=SOUND[kind];if(!config)return;const [freq,duration,type,gainValue,priority]=config,now=performance.now();if(now-(soundTimes.get(kind)??-Infinity)<70||now-lastSoundAt<100&&priority<lastSoundPriority)return;soundTimes.set(kind,now);lastSoundAt=now;lastSoundPriority=priority;if(priority>=3)stopAudio();if(voices.size>=12)return;try{const osc=audioContext.createOscillator(),gain=audioContext.createGain(),voice={osc,cleanup(){voices.delete(voice);try{osc.disconnect()}catch{}try{gain.disconnect()}catch{}}};osc.type=type;osc.frequency.value=freq;gain.gain.value=gainValue*soundVolume;osc.connect(gain);gain.connect(audioContext.destination);voices.add(voice);osc.onended=()=>voice.cleanup();osc.start();gain.gain.exponentialRampToValueAtTime(.0001,audioContext.currentTime+duration);osc.stop(audioContext.currentTime+duration)}catch{stopAudio()}}
+    function saveName(){try{localStorage.setItem(PLAYER_NAME_KEY,$('player-name-input').value.trim())}catch{}}
+    function beginRun(){if(isGameplayScreenActive())return;const name=$('player-name-input').value.trim();if([...name].length>10){$('name-error').textContent=t('nameTooLong');$('player-name-input').focus();return}$('name-error').textContent='';saveName();try{localStorage.removeItem(RESULT_KEY)}catch{}rankingGeneration++;resetGameState();gameState.playerName=name;gameState.play=scoreQueue.capture(name,CLIENT_VERSION);unlockAudio();runCountdown()}
+    $('btn-start').onclick=beginRun;$('btn-retry').onclick=beginRun;
+    $('player-name-input').addEventListener('input',()=>{$('name-error').textContent='';saveName()});$('player-name-input').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.isComposing&&event.keyCode!==229){event.preventDefault();beginRun()}});
+    $('btn-rules').onclick=()=>{$('rules-modal').classList.add('open');playSound('select')};$('btn-rules-close').onclick=()=>{$('rules-modal').classList.remove('open');playSound('cancel')};$('rules-modal').onclick=event=>{if(event.target===$('rules-modal'))$('rules-modal').classList.remove('open')};
+    $('btn-share-home').onclick=()=>shareText(getIntroShareText());$('btn-share-result').onclick=()=>shareText(getResultShareText());
+    $('btn-retire').onclick=()=>{if(!gameState.finalized){$('retire-modal').classList.add('open');playSound('select')}};$('btn-retire-cancel').onclick=()=>{$('retire-modal').classList.remove('open');playSound('cancel')};$('btn-retire-ok').onclick=()=>{$('retire-modal').classList.remove('open');if(gameState.finalized)return;if(animFrameId){cancelAnimationFrame(animFrameId);animFrameId=null}gameState.isRetired=true;showResultScreen()};$('retire-modal').onclick=event=>{if(event.target===$('retire-modal'))$('retire-modal').classList.remove('open')};
+    const gameCanvas=$('game-canvas');gameCanvas.addEventListener('pointerdown',event=>{unlockAudio();onPointerDown(event)},{passive:false});gameCanvas.addEventListener('pointermove',onPointerMove,{passive:false});gameCanvas.addEventListener('pointerup',onPointerUp,{passive:false});gameCanvas.addEventListener('pointercancel',onPointerUp,{passive:false});
+    $('btn-home').onclick=()=>{rankingGeneration++;try{localStorage.removeItem(RESULT_KEY)}catch{}showScreen('home')};$('retrySendBtn').onclick=()=>scoreQueue.drain();$('pendingRetryBtn').onclick=()=>scoreQueue.drain();$('retryRankingBtn').onclick=()=>fetchRanking();
+    $('soundToggle').onclick=()=>{soundEnabled=!soundEnabled;saveSound();if(!soundEnabled)stopAudio();else unlockAudio()};$('soundVolume').oninput=()=>{soundVolume=Number($('soundVolume').value);stopAudio();saveSound();unlockAudio()};
+    document.addEventListener('visibilitychange',()=>{if(document.hidden){stopAudio();try{audioContext?.suspend()?.catch(()=>{})}catch{}}lastTimestamp=0});addEventListener('pagehide',stopAudio);addEventListener('online',()=>scoreQueue.drain());addEventListener('gamelanguagechange',()=>{renderSound();_hudCache={};updateHUD();if($('screen-result').classList.contains('active'))renderResult()});
+    try{$('player-name-input').value=localStorage.getItem(PLAYER_NAME_KEY)||''}catch{}renderSound();renderPending();if(!restoreResult())showScreen('home');scoreQueue.drain();
 
   </script>
 </body>
