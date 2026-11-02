@@ -19,3 +19,6 @@
 - 当作業branchだけ非本番検証triggerを追加。公開artifact/deployは従来default branch push限定。runner/権限/Pages設定を変更しない。
 - 本人iPhone Safariの可聴/可視実機受入は未確認。マージ後は配信commit/PNG応答/縦横共有を確認。元へ戻す場合は今回差分revert PRで行い、利用者の保存情報は削除しない。
 - リポジトリの利用不可モデル指定は2026-11-02本人承認により今回担当実装＋別担当独立reviewへ置換。指示ファイル自体は変更しない。
+
+## 画像受入で発見した別の表示不具合
+初回 branch CI の WebKit home PNG で言語selectが白地・白文字になり現在言語が読みにくいことを実見した。既存暗色CSSとnative描画の差を避け、selectだけ白地・濃色文字へ最小変更する。native矢印/選択操作/言語保存値は不変更。対照unitは変更前失敗→変更後成功、両engineのcomputed色/選択値と実PNGを新headで再検査。X非表示原因の解決とは区別する。

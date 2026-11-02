@@ -30,6 +30,7 @@ try{
   const selector=phase==='home'?'#btn-share-home':'#btn-share-result';
   for(const [lang,catalog]of Object.entries(catalogs)){
    await page.evaluate(lang=>window.gameI18n.setLanguage(lang),lang);
+   assert.deepEqual(await page.locator('#languageSelect').evaluate(e=>({bg:getComputedStyle(e).backgroundColor,fg:getComputedStyle(e).color,value:e.value})),{bg:'rgb(255, 255, 255)',fg:'rgb(17, 17, 17)',value:lang});
    const frozen=await page.evaluate(()=>({wave:gameState.wave,score:gameState.score,level:gameState.level,finalized:gameState.finalized}));
    for(const viewport of [{width:402,height:874},{width:874,height:402}]){
     await page.setViewportSize(viewport);await visible(page,selector);await visible(page,`#screen-${phase} .common-ranking-link`);
