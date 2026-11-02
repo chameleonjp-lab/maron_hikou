@@ -8,7 +8,15 @@
   <title data-i18n="gameTitle">マロン飛行</title>
 <link rel="canonical" href="https://chameleonjp.codeberg.page/maron_hikou/">
 <meta property="og:url" content="https://chameleonjp.codeberg.page/maron_hikou/">
-  <style>
+  <meta property="og:type" content="website">
+<meta property="og:image" content="https://chameleonjp-lab.github.io/maron_hikou/assets/social-preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="マロン飛行：実ゲームの機体、敵、栗の戦利品を夕焼けの空に配置した紹介画像">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://chameleonjp-lab.github.io/maron_hikou/assets/social-preview.png">
+<meta name="twitter:image:alt" content="マロン飛行：戦利品を拾って機体を強化する30ウェーブのシューティング">
+<style>
     /* ===== ベースリセット ===== */
     *, *::before, *::after {
       box-sizing: border-box;
@@ -692,7 +700,7 @@
       opacity: 1;
     }
 
-.common-settings{display:grid;gap:8px;text-align:left}.common-settings input,.common-settings select{width:100%;min-height:44px;font:inherit}.common-settings select{background:#10263e;color:white;padding:8px}.common-settings p{font-size:14px;line-height:1.55}.btn,.common-ranking-link{white-space:normal;overflow-wrap:anywhere;height:auto;min-height:44px}.result-btn-row{flex-wrap:wrap}.result-btn-row>*{flex:1 1 130px;min-width:0}.home-title{overflow-wrap:anywhere;font-size:clamp(30px,10vw,44px)}.rank-name,.rank-result{overflow-wrap:anywhere;min-width:0}.ranking-item{grid-template-columns:42px minmax(0,1fr) minmax(0,1.2fr)}#player-name-input{user-select:text;-webkit-user-select:text}#soundVolume{padding:0}[hidden]{display:none!important}.btn-retire{min-height:44px;white-space:normal}#hud-wave{min-width:0;overflow-wrap:anywhere}.hud-wave{font-size:clamp(12px,3.5vw,16px)}
+.common-settings{display:grid;gap:8px;text-align:left}.common-settings input,.common-settings select{width:100%;min-height:44px;font:inherit}.common-settings select{background:#fff;color:#111;padding:8px}.common-settings p{font-size:14px;line-height:1.55}.btn,.common-ranking-link{white-space:normal;overflow-wrap:anywhere;height:auto;min-height:44px}.result-btn-row{flex-wrap:wrap}.result-btn-row>*{flex:1 1 130px;min-width:0}.home-title{overflow-wrap:anywhere;font-size:clamp(30px,10vw,44px)}.rank-name,.rank-result{overflow-wrap:anywhere;min-width:0}.ranking-item{grid-template-columns:42px minmax(0,1fr) minmax(0,1.2fr)}#player-name-input{user-select:text;-webkit-user-select:text}#soundVolume{padding:0}[hidden]{display:none!important}.btn-retire{min-height:44px;white-space:normal}#hud-wave{min-width:0;overflow-wrap:anywhere}.hud-wave{font-size:clamp(12px,3.5vw,16px)}
 </style>
 </head>
 <body>
@@ -3537,14 +3545,14 @@ button.common-x-share { background:#000 !important; color:#fff !important; borde
      * ゲーム紹介シェア文 (§29)
      */
     function getIntroShareText() {
-      return t('gameTitle')+'\n'+t('shareDescription')+'\n'+GAME_URL;
+      return t('gameTitle')+'\n'+t('shareDescription')+'\n#マロン飛行 #ゲーム制作\n'+GAME_URL;
     }
 
     /**
      * 結果シェア文 (§29)
      */
     function getResultShareText() {
-      return t('gameTitle')+'\n'+t('shareResult',{progress:progressToLabel(gameState.isCleared?31:gameState.wave),score:formatScore(gameState.score),level:gameState.level})+'\n'+GAME_URL;
+      return t('gameTitle')+'\n'+t('shareResult',{progress:progressToLabel(gameState.isCleared?31:gameState.wave),score:formatScore(gameState.score),level:gameState.level})+'\n#マロン飛行 #ゲーム制作\n'+GAME_URL;
     }
 
     // ===== ユーティリティ =====
