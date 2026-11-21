@@ -935,15 +935,22 @@ button.common-x-share { background:#000 !important; color:#fff !important; borde
   const languageNames = {ja:'日本語',en:'English',es:'Español','pt-BR':'Português (Brasil)','zh-Hans':'简体中文',fr:'Français',de:'Deutsch',ko:'한국어',ru:'Русский',it:'Italiano','zh-Hant':'繁體中文',id:'Bahasa Indonesia',tr:'Türkçe',vi:'Tiếng Việt',th:'ไทย'};
   const key = 'maron_hikou:language';
   function normalize(value) {
-    const id=String(value||'').replaceAll('_','-').toLowerCase();
+    const id=String(value||'').trim().replaceAll('_','-').toLowerCase();
     const exact=Object.keys(catalogs).find(lang=>lang.toLowerCase()===id);
     if(exact)return exact;
-    if(id==='zh'||id.startsWith('zh-')){const parts=id.split('-');if(parts.includes('hans'))return 'zh-Hans';if(parts.includes('hant'))return 'zh-Hant';return parts.some(p=>['tw','hk','mo'].includes(p))?'zh-Hant':'zh-Hans';}
+    if(id==='zh'||id.startsWith('zh-')){
+      const parts=id.split('-');
+      const extension=parts.findIndex((part,index)=>index>0&&part.length===1);
+      const core=extension<0?parts:parts.slice(0,extension);
+      const script=core.find(part=>part==='hans'||part==='hant');
+      if(script)return script==='hant'?'zh-Hant':'zh-Hans';
+      return core.some(part=>['tw','hk','mo'].includes(part))?'zh-Hant':'zh-Hans';
+    }
     if(id==='pt'||id.startsWith('pt-'))return 'pt-BR';
     const base=id.split('-')[0];return Object.hasOwn(catalogs,base)?base:null;
   }
   let saved=null;try{saved=localStorage.getItem(key);}catch{}
-  let language=normalize(saved)||(navigator.languages||[navigator.language]).map(normalize).find(Boolean)||'en';
+  let language=normalize(saved)||[...(navigator.languages||[]),navigator.language].map(normalize).find(Boolean)||'en';
   const t=(name,params={})=>String(catalogs[language]?.[name]??catalogs.en[name]??name).replace(/\{(\w+)\}/g,(whole,id)=>Object.hasOwn(params,id)?String(params[id]):whole);
   function render() {
     document.documentElement.lang=language;
