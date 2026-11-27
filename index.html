@@ -1748,7 +1748,7 @@ button.common-x-share { background:#000 !important; color:#fff !important; borde
       if (animFrameId) cancelAnimationFrame(animFrameId);
       // 常に WAVE 1 から開始する(途中ウェーブ開始を許すとランキングの公平性が壊れる)
       startWave(1);
-      void import(/* @vite-ignore */ "https://chameleonjp-lab.github.io/chameleonjp_lab/play-start.js").then(module => module.recordPlayStart("maron_hikou")).catch(() => {});
+      if (globalThis.location?.origin === "https://chameleonjp-lab.github.io") void import(/* @vite-ignore */ "https://chameleonjp-lab.github.io/chameleonjp_lab/play-start.js").then(module => module.recordPlayStart("maron_hikou")).catch(() => {});
       animFrameId = requestAnimationFrame(gameLoop);
     }
 
