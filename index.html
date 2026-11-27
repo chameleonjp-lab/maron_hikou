@@ -1748,6 +1748,7 @@ button.common-x-share { background:#000 !important; color:#fff !important; borde
       if (animFrameId) cancelAnimationFrame(animFrameId);
       // 常に WAVE 1 から開始する(途中ウェーブ開始を許すとランキングの公平性が壊れる)
       startWave(1);
+      void import(/* @vite-ignore */ "https://chameleonjp-lab.github.io/chameleonjp_lab/play-start.js").then(module => module.recordPlayStart("maron_hikou")).catch(() => {});
       animFrameId = requestAnimationFrame(gameLoop);
     }
 
@@ -3690,7 +3691,8 @@ button.common-x-share { background:#000 !important; color:#fff !important; borde
     function unlockAudio(){if(!soundEnabled||soundVolume===0||document.hidden)return;try{if(!audioContext){audioContext=new (window.AudioContext||window.webkitAudioContext)();audioContext.onstatechange=()=>{if(audioContext.state!=='running')stopAudio()};}if(audioContext.state!=='running')audioContext.resume()?.catch(()=>{})}catch{}}
     function playSound(kind){if(!soundEnabled||soundVolume===0||document.hidden)return;if(!audioContext||audioContext.state!=='running'){unlockAudio();return}const config=SOUND[kind];if(!config)return;const [freq,duration,type,gainValue,priority]=config,now=performance.now();if(now-(soundTimes.get(kind)??-Infinity)<70||now-lastSoundAt<100&&priority<lastSoundPriority)return;soundTimes.set(kind,now);lastSoundAt=now;lastSoundPriority=priority;if(priority>=3)stopAudio();if(voices.size>=12)return;try{const osc=audioContext.createOscillator(),gain=audioContext.createGain(),voice={osc,cleanup(){voices.delete(voice);try{osc.disconnect()}catch{}try{gain.disconnect()}catch{}}};osc.type=type;osc.frequency.value=freq;gain.gain.value=gainValue*soundVolume;osc.connect(gain);gain.connect(audioContext.destination);voices.add(voice);osc.onended=()=>voice.cleanup();osc.start();gain.gain.exponentialRampToValueAtTime(.0001,audioContext.currentTime+duration);osc.stop(audioContext.currentTime+duration)}catch{stopAudio()}}
     function saveName(){try{localStorage.setItem(PLAYER_NAME_KEY,$('player-name-input').value.trim())}catch{}}
-    function beginRun(){if(isGameplayScreenActive())return;const name=$('player-name-input').value.trim();if([...name].length>10){$('name-error').textContent=t('nameTooLong');$('player-name-input').focus();return}$('name-error').textContent='';saveName();try{localStorage.removeItem(RESULT_KEY)}catch{}rankingGeneration++;resetGameState();gameState.playerName=name;gameState.play=scoreQueue.capture(name,CLIENT_VERSION);unlockAudio();runCountdown()}
+    function beginRun(){if(isGameplayScreenActive())return;const name=$('player-name-input').value.trim();if([...name].length>10){$('name-error').textContent=t('nameTooLong');$('player-name-input').focus();return}$('name-error').textContent='';saveName();try{localStorage.removeItem(RESULT_KEY)}catch{}rankingGeneration++;resetGameState();gameState.playerName=name;gameState.play=scoreQueue.capture(name,CLIENT_VERSION);
+    unlockAudio();runCountdown()}
     $('btn-start').onclick=beginRun;$('btn-retry').onclick=beginRun;
     $('player-name-input').addEventListener('input',()=>{$('name-error').textContent='';saveName()});$('player-name-input').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.isComposing&&event.keyCode!==229){event.preventDefault();beginRun()}});
     $('btn-rules').onclick=()=>{$('rules-modal').classList.add('open');playSound('select')};$('btn-rules-close').onclick=()=>{$('rules-modal').classList.remove('open');playSound('cancel')};$('rules-modal').onclick=event=>{if(event.target===$('rules-modal'))$('rules-modal').classList.remove('open')};
